@@ -12,32 +12,68 @@
   "nav": [
     {
       "label": "Home",
-      "path": "/"
+      "path": "/",
+      "style": "link"
     },
     {
       "label": "Events",
-      "path": "/events"
+      "path": "/events",
+      "style": "link"
     },
     {
       "label": "Issues",
-      "path": "/issues"
+      "path": "/issues",
+      "style": "link"
     },
     {
       "label": "Endorsements",
-      "path": "/endorsements"
+      "path": "/endorsements",
+      "style": "link"
     },
     {
       "label": "News & media",
-      "path": "/blog"
+      "path": "/blog",
+      "style": "link"
     },
     {
       "label": "About",
-      "path": "/about"
+      "path": "/about",
+      "style": "link"
+    },
+    {
+      "label": "Join",
+      "path": "https://example.org/signup",
+      "style": "button"
     }
   ],
   "social": {
     "x": "@demochapter",
     "ig": "demochapter",
-    "bsky": "demochapter.bsky.social"
+    "bsky": "demochapter.bsky.social",
+    "fb": ""
+  },
+  "home": "home",
+  "announcement": {
+    "on": true,
+    "text": "Our fall canvass kicks off Saturday. Come knock doors with us.",
+    "link_label": "RSVP",
+    "url": "/events",
+    "until": ""
+  },
+  "footer_links": [
+    {
+      "label": "Contact us",
+      "url": "mailto:demo@example.org"
+    },
+    {
+      "label": "National site",
+      "url": "https://cnliberalism.org"
+    }
+  ],
+  "disclaimer": "",
+  "connections": {
+    "luma_calendar_url": "",
+    "action_network_url": "https://example.org/signup",
+    "donate_url": ""
   }
 }
