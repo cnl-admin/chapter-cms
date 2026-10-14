@@ -9,3 +9,5 @@ data/*/trash/
 data/*/shares.json
 data/*/site-draft.json
 data/*/.history/
+test/visual/actual/
+chapter-editor-demo.html

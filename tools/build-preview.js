@@ -1,68 +1,81 @@
 #!/usr/bin/env node
-// Builds a single-file, server-less demo of the editor (for sharing a phone preview).
-// Usage: node tools/build-preview.js out.html   (edits live in the viewer's browser only)
+// Builds a single-file, server-less demo of the editor, for trying it on any device without running the server.
+// Usage: node tools/build-preview.js out.html
+// The demo runs the real code: the lib/ modules (API, drafts, publishing, history, checks) run in the browser against
+// an in-memory store saved to localStorage, and a fetch shim routes the editor's /admin/api calls to api.handle().
+// Edits stay in the viewer's browser. Nothing is published anywhere.
 const fs = require('fs'), path = require('path');
+const { execFileSync } = require('child_process');
 const root = path.join(__dirname, '..');
 const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
-const data = { drafts: {}, site: JSON.parse(rd('data/demo/site.json')), pages: {} };
-for (const f of fs.readdirSync(path.join(root, 'data/demo/pages'))) data.pages[f.slice(0, -5)] = JSON.parse(rd('data/demo/pages/' + f));
+// Inside an inline <script>, "</script" would end the script early.
+const safe = (s) => s.replace(/<\/(script)/gi, '<\\/$1');
+
+// Seed: the demo chapter's tracked files (not local drafts or history), in the store's key layout.
+let files;
+try { files = execFileSync('git', ['ls-files', 'data/demo'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean); } catch { files = []; }
+if (!files.length) files = ['data/demo/site.json', ...fs.readdirSync(path.join(root, 'data/demo/page')).map((f) => 'data/demo/page/' + f)];
+const seed = { demo: {} };
+for (const f of files.filter((x) => x.endsWith('.json'))) seed.demo[f.slice('data/demo/'.length, -5)] = JSON.parse(rd(f));
+
+// lib modules, wrapped CommonJS-style. Order doesn't matter: require() loads on first use.
+const MODS = ['text', 'memstore', 'blocks', 'render', 'checks', 'cms', 'api'];
+const mod = (name) => `__m['./${name}']=function(module,exports,require){${rd(`lib/${name}.js`)}\n};`;
+
 const html = rd('admin/index.html');
-const style = html.match(/<style>([\s\S]*?)<\/style>/)[1];
 const body = html.match(/<body>([\s\S]*?)<script src/)[1];
 const sitecss = rd('static/site.css');
-const adminJs = rd('admin/admin.js');
-const mod = (name, src) => `__m['${name}']=function(module,exports,require){${src.replace(/<\/script>/g, "<\\/script>")}\n};`;
+// What the preview frame loads in edit mode (server.js serves these as files).
+const editAssets = `<style>${rd('admin/frame.css')}</style><script>${rd('lib/text.js')}</script><script>${rd('admin/frame.js')}</script>`;
+
 const out = `<title>Chapter Editor Demo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-${style}
-.note{background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:.6rem .8rem;font-size:.85rem;color:var(--mut)}
+${rd('admin/admin.css')}
+header#top{top:env(safe-area-inset-top,0px)}
+#demoNote{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--line);font-size:.85rem;color:var(--mut);padding-block:.4rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#demoNote span{flex:1;min-width:12rem}
 </style>
-${body.replace('<button id="save"', '<button id="resetBtn">Reset demo</button><button id="save"').replace('<main>', '<div class="note" style="margin:12px max(16px,env(safe-area-inset-left,0px)) 0">Demo: your edits are saved only in this browser. Nothing is published.</div><main>')}
+${body.replace('<main', '<div id="demoNote"><span>Demo: this runs the real editor in your browser. Edits are saved only on this device, and publishing only updates the demo.</span><button id="resetDemo" class="small">Reset demo</button></div>\n<main')}
 <script>
-var __m={};
-var __siteCss=${JSON.stringify(sitecss)};
-var __seed=${JSON.stringify(data)};
-${mod('blocks', rd('lib/blocks.js'))}
-${mod('render', rd('lib/render.js').replace("require('./blocks')", "require('blocks')"))}
-function __require(n){var m={exports:{}};__m[n](m,m.exports,__require);return m.exports}
-(function(){
-  var B=__require('blocks'),R=__require('render');
-  window.confirm=function(){return true}; // dialogs are blocked in the viewer; demo data can be reset
-  var KEY='chapter-cms-demo-v3',st;
-  try{st=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-  if(!st)st=JSON.parse(JSON.stringify(Object.assign({drafts:{}},__seed)));
-  var hist={};
-  var save=function(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
-  var css=function(h){return h.replace('<link rel="stylesheet" href="/static/site.css">','<style>'+__siteCss+'</style>')};
-  var pageOf=function(b){return{title:String(b.title||''),seo_title:String(b.seo_title||''),seo_description:String(b.seo_description||''),seo_image:String(b.seo_image||''),blocks:B.validateBlocks(b.blocks)}};
-  var stamp=function(){return new Date().toISOString().replace(/[:.]/g,'-')+'.json'};
-  var J=function(x){return Promise.resolve({ok:true,statusText:'OK',headers:{get:function(){return 'application/json'}},json:function(){return Promise.resolve(x)}})};
-  var T=function(x){return Promise.resolve({ok:true,statusText:'OK',headers:{get:function(){return 'text/html'}},text:function(){return Promise.resolve(x)}})};
-  var E=function(x){return Promise.resolve({ok:false,statusText:x,headers:{get:function(){return 'application/json'}},json:function(){return Promise.resolve({error:x})}})};
-  window.fetch=function(url,o){
-    o=o||{};var p=url.replace('/admin/api/','').split('/'),m=o.method||'GET',b=o.body?JSON.parse(o.body):null;
-    try{
-      if(p[0]==='schema')return J(B.schema());
-      if(p[0]==='chapters')return J(['demo']);
-      if(p[0]==='preview')return T(css(R.renderPage(st.site,pageOf(b),{pageSlug:b.page,preview:true,edit:!!b.edit})));
-      var kind=p[2],slug=p[3],extra=p[4];
-      if(!kind)return J({site:st.site,pages:Object.keys(Object.assign({},st.pages,st.drafts)).map(function(s){var pg=st.drafts[s]||st.pages[s];return{slug:s,title:pg.title,draft:!!st.drafts[s],live:!!st.pages[s]}})});
-      if(kind==='publish'){var done=Object.keys(st.drafts);done.forEach(function(s){if(st.pages[s])(hist[s]=hist[s]||[]).push({t:stamp(),d:st.pages[s]});st.pages[s]=st.drafts[s]});st.drafts={};save();return J({published:done})}
-      if(kind==='pages'){var title=String(b.title||'').trim()||'New page',base=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'page',sl=base,n=2;while(st.pages[sl]||st.drafts[sl])sl=base+'-'+(n++);st.drafts[sl]=pageOf({title:title,blocks:[{type:'hero',props:Object.assign(B.defaultsFor('hero'),{heading:title})},{type:'text',props:B.defaultsFor('text')}]});st.site.nav=(st.site.nav||[]).concat([{label:title,path:'/'+sl}]);save();return J({slug:sl})}
-      if(kind==='site'){if(m==='PUT'){st.site=Object.assign({},st.site,{name:b.name,tagline:b.tagline,footer:b.footer,contact_email:b.contact_email,theme:b.theme,social:b.social,nav:b.nav});save()}return J(st.site)}
-      if(extra==='history')return J((hist[slug]||[]).map(function(h){return h.t}).reverse());
-      if(extra==='restore'){var h=(hist[slug]||[]).filter(function(x){return x.t===b.version})[0];if(!h)return E('version not found');st.drafts[slug]=h.d;save();return J(h.d)}
-      if(extra==='discard'){delete st.drafts[slug];save();return J(st.pages[slug]||{})}
-      if(m==='PUT'){st.drafts[slug]=pageOf(b);save()}
-      return J(st.drafts[slug]||st.pages[slug]);
-    }catch(e){return E(e.message)}
+window.__DEMO = true;
+var __m = {}, __cache = {};
+function __require(n) { if (__cache[n]) return __cache[n].exports; var m = __cache[n] = { exports: {} }; __m[n](m, m.exports, __require); return m.exports; }
+${safe(MODS.map(mod).join('\n'))}
+(function () {
+  var KEY = 'chapter-cms-demo-v4', SEED = ${safe(JSON.stringify(seed))};
+  var SITE_CSS = ${safe(JSON.stringify('<style>' + sitecss + '</style>'))};
+  var data = null;
+  try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* storage blocked */ }
+  if (!data || !data.demo) data = JSON.parse(JSON.stringify(SEED));
+  var timer = 0;
+  var persist = function (d) { clearTimeout(timer); timer = setTimeout(function () { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* full or blocked */ } }, 300); };
+  var store = new (__require('./memstore').MemoryStore)(data, persist);
+  var cms = __require('./cms').createCms({ store: store });
+  var A = __require('./api');
+  var api = A.createApi({ cms: cms, editAssets: ${safe(JSON.stringify(editAssets))} });
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, o) {
+    url = String(url); o = o || {};
+    if (url.indexOf('/admin/api/') !== 0) return realFetch ? realFetch(url, o) : Promise.reject(new Error('offline'));
+    var h = o.headers || {}, user = '';
+    try { user = decodeURIComponent(h['x-editor'] || ''); } catch (e) { /* ignore */ }
+    var req = { method: o.method || 'GET', path: url.slice('/admin/api/'.length), body: o.body ? JSON.parse(o.body) : undefined, user: user.trim().slice(0, 40) || 'Someone' };
+    return api.handle(req).catch(A.errorResponse).then(function (r) {
+      var isHtml = r.type === 'html';
+      var text = isHtml ? String(r.body).replace('<link rel="stylesheet" href="/static/site.css">', SITE_CSS) : JSON.stringify(r.body);
+      return new Response(text, { status: r.status, headers: { 'content-type': isHtml ? 'text/html' : 'application/json' } });
+    });
   };
-  var wire=function(){var rb=document.getElementById('resetBtn');if(!rb)return setTimeout(wire,50);rb.onclick=function(){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};wire();
+  document.getElementById('resetDemo').onclick = function () {
+    clearTimeout(timer); store.onChange = null;
+    try { localStorage.removeItem(KEY); localStorage.removeItem('chapter-cms-last'); } catch (e) { /* ignore */ }
+    location.reload();
+  };
 })();
 </script>
-<script>
-${adminJs}
-</script>`;
-fs.writeFileSync(process.argv[2] || 'preview.html', out);
-console.log('wrote', process.argv[2] || 'preview.html', out.length, 'bytes');
+${['lib/text.js', 'admin/util.js', 'admin/editor.js', 'admin/panel.js', 'admin/screens.js', 'admin/boot.js'].map((f) => `<script>\n${safe(rd(f))}\n</script>`).join('\n')}
+`;
+const dest = process.argv[2] || 'preview.html';
+fs.writeFileSync(dest, out);
+console.log('wrote', dest, out.length, 'bytes');
