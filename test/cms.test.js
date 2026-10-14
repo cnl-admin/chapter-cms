@@ -3,26 +3,10 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs'), os = require('os'), path = require('path');
-const { MemoryStore } = require('../lib/memstore');
 const { FileStore } = require('../lib/store');
-const { createCms } = require('../lib/cms');
-const { createApi, errorResponse } = require('../lib/api');
-const { checkPage, checkSite } = require('../lib/checks');
+const { checkPage, checkSite, checkItem } = require('../lib/checks');
+const { setup } = require('./helpers');
 
-const DATA = path.join(__dirname, '..', 'data', 'demo');
-function seed() {
-  const demo = { site: JSON.parse(fs.readFileSync(path.join(DATA, 'site.json'), 'utf8')) };
-  for (const f of fs.readdirSync(path.join(DATA, 'page'))) demo['page/' + f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(DATA, 'page', f), 'utf8'));
-  return { demo };
-}
-function setup() {
-  let t = Date.parse('2030-01-01T12:00:00Z');
-  const clock = { tick: (ms) => { t += ms; } };
-  const cms = createCms({ store: new MemoryStore(seed()), now: () => new Date(t) });
-  const api = createApi({ cms, now: () => t });
-  const call = (method, p, body, user = 'Sam') => api.handle({ method, path: p, body, user }).catch(errorResponse);
-  return { cms, call, clock };
-}
 const edit = async (call, slug, fn, user = 'Sam', baseRev) => {
   const g = (await call('GET', `chapter/demo/page/${slug}`)).body;
   fn(g.page);
@@ -84,13 +68,13 @@ test('pages screen actions: duplicate, rename, unpublish, delete and restore, se
   assert.strictEqual((await call('POST', `chapter/demo/page/${dup}/rename`, { title: 'Team', slug: 'team' })).body.slug, 'team');
   assert.strictEqual((await call('POST', 'chapter/demo/page/about/rename', { slug: 'about-us' })).status, 400, 'published pages keep their address');
   assert.strictEqual((await call('POST', 'chapter/demo/page/home/delete', {})).status, 400, 'homepage is protected');
-  await call('POST', 'chapter/demo/page/blog/unpublish', {});
-  assert.strictEqual((await cms.renderLive('demo', 'blog')).status, 404);
-  assert.ok(!(await cms.renderLive('demo', '')).html.includes('href="/blog"'), 'removed from the live menu at once');
-  const t = (await call('POST', 'chapter/demo/page/blog/delete', {})).body.trashed;
-  assert.strictEqual((await call('GET', 'chapter/demo')).body.trash[0].slug, 'blog');
-  assert.strictEqual((await call('POST', `chapter/demo/trash/${t}/restore`, {})).body.slug, 'blog');
-  assert.strictEqual((await call('GET', 'chapter/demo/page/blog')).body.draft, true);
+  await call('POST', 'chapter/demo/page/news/unpublish', {});
+  assert.match((await cms.renderLive('demo', 'news')).html, /<title>News and posts ·/, 'the address falls back to the automatic list of posts');
+  assert.ok(!(await cms.renderLive('demo', '')).html.includes('href="/news"'), 'removed from the live menu at once');
+  const t = (await call('POST', 'chapter/demo/page/news/delete', {})).body.trashed;
+  assert.strictEqual((await call('GET', 'chapter/demo')).body.trash[0].slug, 'news');
+  assert.strictEqual((await call('POST', `chapter/demo/trash/${t}/restore`, {})).body.slug, 'news');
+  assert.strictEqual((await call('GET', 'chapter/demo/page/news')).body.draft, true);
   await call('POST', 'chapter/demo/page/events/home', {});
   const s = (await call('GET', 'chapter/demo/site')).body.site;
   assert.strictEqual(s.home, 'events');
@@ -140,7 +124,9 @@ test('presence lists other editors and the current rev', async () => {
   const { call, clock } = setup();
   await call('POST', 'chapter/demo/presence', { id: 'a', name: 'Sam', doc: 'home' });
   let r = (await call('POST', 'chapter/demo/presence', { id: 'b', name: 'Ana', doc: 'home' })).body;
-  assert.deepStrictEqual(r.others, [{ name: 'Sam', doc: 'home' }]); assert.strictEqual(r.rev, 0);
+  assert.deepStrictEqual(r.others, [{ name: 'Sam', doc: 'home' }]); assert.strictEqual(r.rev, (await call('GET', 'chapter/demo/page/home')).body.rev);
+  r = (await call('POST', 'chapter/demo/presence', { id: 'b', name: 'Ana', doc: '@events-summer-picnic' })).body;
+  assert.strictEqual(r.rev, (await call('GET', 'chapter/demo/item/events/summer-picnic')).body.rev, 'items have revs too');
   clock.tick(60e3);
   r = (await call('POST', 'chapter/demo/presence', { id: 'b', name: 'Ana', doc: 'home' })).body;
   assert.deepStrictEqual(r.others, [], 'stale editors drop off');
@@ -152,14 +138,16 @@ test('checks: placeholders, starter text, broken and vague links, alt text, cont
     { type: 'text', props: { heading: 'H', body: 'Write something here.' } },
     { type: 'text', props: { heading: 'H', body: 'See [click here](/events) or [this](www.example.com)' } },
     { type: 'image', props: { src: 'https://x/y.jpg', alt: '', caption: '' } },
-    { type: 'events_list', props: { heading: 'E', events: [{ title: 'Meetup', start: '2030-01-01T10:00', location: '[Venue]' }] } },
   ] };
   const msgs = checkPage(page, { live, site: {} }).map((c) => `${c.level}:${c.msg}`).join('\n');
-  for (const re of [/error:Main button link: Links to \/missing/, /warn:The button “More” has no link/, /error:Text still has the starter text/, /warn:The link “click here”/, /error:.*isn't a working link. Did you mean https:\/\/www.example.com/, /error:Describe this image/, /error:Location: replace the placeholder “\[Venue\]”/]) assert.match(msgs, re);
+  for (const re of [/error:Main button link: Links to \/missing/, /warn:The button “More” has no link/, /error:Text still has the starter text/, /warn:The link “click here”/, /error:.*isn't a working link. Did you mean https:\/\/www.example.com/, /error:Describe this image/]) assert.match(msgs, re);
+  const item = checkItem('events', { title: 'Meetup', start: '2030-01-01T10:00', end: '2030-01-01T09:00', location: '[Venue]', issues: ['gone'] }, { live, site: {}, all: new Set() }).map((c) => `${c.level}:${c.path}:${c.msg}`).join('\n');
+  for (const re of [/error:f.location:Location: replace the placeholder “\[Venue\]”/, /error:f.end:The event ends before it starts/, /f.issues:.*deleted/i]) assert.match(item, re);
   const fix = checkPage(page, { live, site: {} }).find((c) => c.fix);
   assert.strictEqual(fix.fix, 'See [click here](/events) or [this](https://www.example.com)', 'one-tap fix rewrites the link in place');
-  const site = checkSite({ name: 'X', theme: { primary: '#eeeeee' }, nav: [{ label: '', path: '/gone' }] }, { live });
-  assert.ok(site.some((c) => c.section === 'look' && c.level === 'error'));
+  const site = checkSite({ name: 'X', theme: { palette: 'custom', primary: '#eeeeee', accent: '#C23B4F' }, nav: [{ label: '', path: '/gone' }] }, { live, features: { custom_colors: true } });
+  assert.ok(site.some((c) => c.section === 'look' && c.level === 'error'), 'custom colours are contrast-checked');
+  assert.ok(checkSite({ name: 'X', theme: { palette: 'custom', primary: '#eeeeee' } }, { live }).some((c) => c.section === 'look' && /custom colours/.test(c.msg)), 'custom colours need national to allow them');
   assert.ok(site.some((c) => /Menu item 1 has no label/.test(c.msg)) && site.some((c) => /\/gone/.test(c.msg)));
 });
 test('FileStore keeps keys inside the chapter folder', async () => {

@@ -72,6 +72,11 @@
   document.addEventListener('click', (e) => {
     if (e.target.closest('a')) e.preventDefault();
     if (e.target.closest('#cms-bar,.tb,.ins,.addsec,.addatom')) return;
+    // "Edit this event" on a list, "Edit it everywhere" on a saved section, "Turn into a separate copy"
+    const open = e.target.closest('[data-open]');
+    if (open) { e.preventDefault(); e.stopPropagation(); post({ t: 'open', ref: open.dataset.open }); return; }
+    const det = e.target.closest('[data-detach]');
+    if (det) { e.preventDefault(); e.stopPropagation(); post({ t: 'act', a: 'detach', b: +det.closest('.blk').dataset.b }); return; }
     const site = e.target.closest('[data-site]');
     if (site) { post({ t: 'site', section: site.dataset.site }); return; }
     const bl = e.target.closest('.blk'), it = e.target.closest('[data-item]'), f = isField(e.target), at = e.target.closest('.atom');
@@ -121,9 +126,9 @@
     const f = isField(e.target);
     if (!f) return;
     cur = f; drawBar(f);
-    const bl = f.closest('.blk'), at = f.closest('.atom');
-    mark(+bl.dataset.b, at ? at.dataset.atom : null);
-    post({ t: 'focus', f: f.dataset.f, b: +bl.dataset.b, atom: at ? at.dataset.atom : null });
+    const bl = f.closest('.blk'), at = f.closest('.atom'), b = bl ? +bl.dataset.b : -1; // -1: an item's own field
+    mark(b, at ? at.dataset.atom : null);
+    post({ t: 'focus', f: f.dataset.f, b, atom: at ? at.dataset.atom : null });
   });
   document.addEventListener('focusout', (e) => {
     setTimeout(() => { if (!isField(document.activeElement) && !bar.contains(document.activeElement)) { bar.style.display = 'none'; cur = null; } }, 0);
@@ -194,6 +199,8 @@
     if (e.key === 'Escape') { f.blur(); return; }
     if (e.key === 'Enter' && !f.dataset.ml) { e.preventDefault(); f.blur(); }
   });
+  // Forms (sign-up, contact) never send from the editor.
+  document.addEventListener('submit', (e) => e.preventDefault(), true);
   // Paste and drop as plain text: formatting comes only from the toolbar, so pages stay consistent.
   document.addEventListener('paste', (e) => {
     const f = isField(e.target); if (!f) return;
@@ -207,7 +214,8 @@
   const tbFor = (x, atom) => {
     const t = document.createElement('div');
     t.className = 'tb'; t.setAttribute('contenteditable', 'false');
-    t.innerHTML = `<span class="grip" draggable="true" title="Drag to move" data-grip="1">⠿</span><b></b><button data-a="up" title="Move up" aria-label="Move up">↑</button><button data-a="down" title="Move down" aria-label="Move down">↓</button><button data-a="dup" title="Duplicate" aria-label="Duplicate">⧉</button><button data-a="rm" title="Delete" aria-label="Delete">✕</button>`;
+    const reuse = !atom && x.dataset.type !== 'saved' && !CMS.inSection ? '<button data-a="reuse" title="Save for reuse on other pages" aria-label="Save for reuse on other pages">☆</button>' : '';
+    t.innerHTML = `<span class="grip" draggable="true" title="Drag to move" data-grip="1">⠿</span><b></b><button data-a="up" title="Move up" aria-label="Move up">↑</button><button data-a="down" title="Move down" aria-label="Move down">↓</button><button data-a="dup" title="Duplicate" aria-label="Duplicate">⧉</button>${reuse}<button data-a="rm" title="Delete" aria-label="Delete">✕</button>`;
     t.querySelector('b').textContent = x.dataset.label || '';
     x.insertBefore(t, x.firstChild);
   };

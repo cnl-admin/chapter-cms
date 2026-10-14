@@ -1,0 +1,20 @@
+{
+  "title": "Monthly Meetup: Housing and Zoning",
+  "start": "2026-11-05T18:30",
+  "end": "2026-11-05T20:30",
+  "location": "Riverside Taproom",
+  "address": "Riverside Taproom, 200 River St, Demo City",
+  "url": "https://lu.ma/example-1",
+  "cover_image": "",
+  "description": "Casual drinks and a discussion of the **city housing plan**. All welcome, no experience needed.",
+  "issues": [
+    "housing-abundance"
+  ],
+  "luma_id": "evt-demo1",
+  "blocks": [],
+  "rev": 2,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
+}

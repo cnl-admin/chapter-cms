@@ -1,8 +1,13 @@
 node_modules/
 *.log
 test-results/
-# runtime data the CMS writes (the demo seed is site.json + page/)
+# runtime data the CMS writes (the demo seed is site.json, meta.json, page/ and item/; national is config.json and item/)
 data/*/draft/
+data/*/idraft/
+data/*/media/
+data/*/blob/
+data/*/inbox/
+data/*/schedule.json
 data/*/ver/
 data/*/verindex/
 data/*/trash/

@@ -1,6 +1,6 @@
 # Chapter CMS
 
-A small block-based CMS for CNL chapter websites. Chapter leads edit pages by stacking pre-made sections (hero, events, endorsements, issue cards, news and media, people, text, columns, call to action); the public site renders them in the "Yard Sign" design (option C from the CNL Chapter Sites design-directions canvas). No dependencies: just Node 20+.
+A small block-based CMS for CNL chapter websites. Chapter leads enter their events, news, people, endorsements and issues once, then build pages by stacking pre-made sections that show them (plus text, photos, columns, FAQs, forms and more). Every item gets its own page with a clean link. The public site renders in the "Yard Sign" design (option C from the CNL Chapter Sites design-directions canvas) or a plain style, in colours national approves. No dependencies: just Node 20+.
 
 ## Run it
 
@@ -30,8 +30,16 @@ The page preview is the editor. Leads click any text to type over it, and everyt
 - **Formatting.** Rich text fields get a small bar with bold, italic, link, list and subheading. Tab moves to the next field. Pasting drops outside formatting.
 - **Sections.** Each section and column block has a toolbar to drag (⠿), move, duplicate or delete. "Add a section here" sits between sections and opens the block gallery.
 - **Side panel.** Shows guidance for the field you're in, prewritten options, the section's settings and list items. On phones it becomes a bottom sheet, with a bar for undo, previous and next section, and publish.
-- **Pages.** The Pages screen creates (optionally adding to the menu), duplicates, renames, unpublishes, deletes (to a restorable trash) and sets the homepage.
-- **Settings.** Chapter basics, colors and logo, menu (with dropdowns and button-style links), announcement bar, footer links, connections (Action Network, Luma) and social links. Changes preview live and publish like pages.
+- **Content.** One screen with a tab per kind of content: pages, events, news and posts, people, endorsements, issues and saved sections. Each item is entered once and shows everywhere a section lists it, and each has its own page (`/events/zoning-hearing`) that is edited like any page: text on the page, dates and links in the side panel, extra sections below. Past events move to `/events/archive`, endorsements to `/endorsements/results` after the election, and former leads to the alumni list, all on their own. Lists hide themselves (or show a message) when empty. With no page at `/events`, `/news`, `/people` or `/issues`, an automatic list page appears there.
+- **Pages.** Create (from a blank page or a template: campaign, volunteer drive, voter guide), duplicate, rename, unpublish, delete (to a restorable trash) and set the homepage. Posts, endorsements and issues have templates too.
+- **Issue tags.** Events, posts and endorsements are tagged with issues, and each issue page lists everything tagged with it.
+- **Saved sections.** Any section can be saved for reuse. Edit it once and every page that uses it updates; "Turn into a separate copy" detaches one page's copy.
+- **When to show a section.** Show a section between two dates, only on phones or computers, or until an event is over. Hidden sections stay in the editor, dimmed.
+- **Photos.** Uploads shrink in the browser (at most 2000px, compressed) and the server checks what the file really is. Each chapter has a media library, and a national library is shared with every chapter. On phones the camera opens directly. Alt text written once in the library fills in wherever the photo is used.
+- **Settings.** Chapter basics, the look (style, an approved colour set and fonts; changing it never touches content), logo and identity (a new logo waits for national's approval; without a favicon the chapter's initials are used, and a share image can be made from the chapter name in one tap), menu, announcement bar (with start and end dates), footer, connections (Action Network, Luma) and social links. Changes preview live and publish like pages.
+- **Contact forms.** Visitors message the chapter or a person without seeing anyone's email address. Messages land under More, Messages (rate-limited, with a spam trap).
+- **Scheduling.** Publish later from the publish dialog, or schedule a page to publish or unpublish under its Schedule button. What goes live is what was saved when it was scheduled.
+- **National settings.** Approved colour sets (each checked for contrast) and fonts, logo approvals, the national media library, and feature switches (events, posts, people, issues, endorsements, contact forms, custom colours) by default or per chapter. A switched-off feature disappears from the editor and the site. Until logins arrive (Stage 4) this screen is open to anyone with editor access.
 - **Publishing.** The publish dialog lists every unpublished page and site change with a summary, so a lead can publish one item or everything. Pre-publish checks run first: errors (a missing required field, a broken link, an image without alt text) block publishing, and warnings (vague link text, leftover starter text, low color contrast) advise. Most issues have "Show me" and many have "Fix it".
 - **History.** Every page and the site settings keep versions: who and when, named versions, compare with the current draft word by word, and restore. The site timeline can restore the whole site as it was at a past publish (restored as drafts, so nothing changes until you publish).
 - **Sharing.** A preview link shows a page with its unpublished changes to anyone, for 7 days, marked noindex. Links can be revoked.
@@ -39,8 +47,12 @@ The page preview is the editor. Leads click any text to type over it, and everyt
 
 ## How it works
 
-- **Store.** `lib/store.js` (files) and `lib/memstore.js` (memory, used by tests and the demo) share one tiny key-value interface: `get`, `put`, `del`, `list(prefix/)`, `chapters()`. Moving to Cloudflare means writing that interface on KV, R2 or D1. Keys per chapter: `site`, `site-draft`, `page/<slug>`, `draft/<slug>`, `ver/<doc>/<id>`, `verindex/<doc>`, `trash/<id>`, `shares`. On disk a key is `data/<chapter>/<key>.json`.
-- **Core.** `lib/cms.js` holds the rules: drafts, publishing, versions, trash, share links and checks. Every doc carries `rev`, `updated_at` and `updated_by`; a save sends the rev it started from and gets a 409 with the current doc when someone else saved first.
+- **Store.** `lib/store.js` (files) and `lib/memstore.js` (memory, used by tests and the demo) share one tiny key-value interface: `get`, `put`, `del`, `list(prefix/)`, `chapters()`, plus `putBlob`, `getBlob`, `delBlob` for uploaded files. Moving to Cloudflare means writing that interface on KV and R2 or D1. Keys per chapter: `site`, `site-draft`, `page/<slug>`, `draft/<slug>`, `item/<collection>/<id>`, `idraft/<collection>/<id>`, `ver/<doc>/<id>`, `verindex/<doc>`, `trash/<id>`, `shares`, `schedule`, `media/<id>` (with the file at `blob/<id>`), `inbox/<id>` and `meta` (the content schema version). On disk a key is `data/<chapter>/<key>.json` (`.bin` for files). The reserved `national` chapter holds `config` (approved looks, feature switches), its media library and posts shared with every chapter.
+- **Core.** `lib/cms.js` holds the rules: drafts, publishing, versions, trash, share links, schedules, media, messages and checks, for pages and items alike. Every doc carries `rev`, `updated_at` and `updated_by`; a save sends the rev it started from and gets a 409 with the current doc when someone else saved first.
+- **Collections.** `lib/collections.js` defines each kind of content (fields, sort order, item page, related lists) the way `lib/blocks.js` defines blocks; `lib/fields.js` cleans fields for both. A section that lists content (`view: 'events'`) gets the chapter's items at render time, so one edit shows everywhere.
+- **Looks.** `lib/theme.js` turns a chapter's style, colour set and fonts into CSS variables and checks contrast. Blocks store words and choices, never colours or fonts, so a restyle changes no content. `lib/national.js` holds national's settings and feature switches; `lib/templates.js` the starter pages.
+- **Upgrades.** Blocks carry a schema `version`; older props are upgraded by `migrations[n]` when read, so old pages and versions keep working. A chapter whose data predates collections is upgraded once on first use: lists inside sections move into the shared collections (matched, never duplicated, order kept).
+- **Content API.** `GET /api/v1` lists endpoints; `/api/v1/pages`, `/api/v1/events`, `/api/v1/news` (and the other collections, by name or path) list published content, and `/api/v1/<kind>/<id>` returns one item. Read-only, published content only, private fields (like emails) left out, open to other sites (CORS).
 - **API.** `lib/api.js` maps `/admin/api/*` requests to the core and doesn't depend on a web server. `server.js` adds auth, CSRF checks (JSON content type and same origin on writes) and the public site. The demo calls the same `handle()` from a fetch shim.
 - **Checks.** `lib/checks.js` checks a page or the site settings and returns issues with where they are and, when possible, a one-tap fix.
 - **Rendering.** `lib/render.js` wraps blocks in the site chrome (announcement bar, menu, footer). Everything is escaped, and links are limited to `http(s)`, `mailto:` and relative paths. Rich text fields accept `**bold**`, `_italic_`, `[link](https://…)`, `- lists` and `### subheadings`.
@@ -64,9 +76,9 @@ volunteer_form: {
 },
 ```
 
-- **Field kinds:** `text`, `textarea`, `url`, `date`, `select`, `list` (with sub-`fields`).
+- **Field kinds:** `text`, `textarea`, `url`, `image`, `date`, `select`, `tags` and `ref` (items of a collection), `list` (with sub-`fields`).
 - **Field options:** `options` (prewritten copy), `rich`, `max`, `maxLines`, `required`, `hint`, `panel` (edit in the side panel), `fallback` (a Settings > Connections key).
-- **Block options:** `presets` (one-tap list items), `sample` (gallery content), `atom: true` (can also sit inside a column).
+- **Block options:** `presets` (one-tap list items), `sample` (gallery content), `atom: true` (can also sit inside a column), `view` (lists a collection), `feature` (hidden when that feature is off), `version` with `migrations` (when props change shape).
 - **Render:** escape everything with `esc`, pass links through `safeUrl`, and mark editable text with `c.f(key)` or `c.fi(list, j, key)`, which return nothing on the public site. Rich text goes through the `body(c, attrs, text)` helper.
 - **Styles:** go in `static/site.css`; blocks only emit class names.
 
@@ -74,12 +86,11 @@ volunteer_form: {
 
 ## Tests
 
-- `npm test` covers the block contract, the core (drafts, conflicts, publishing, versions, restore, shares, checks, presence), file-store safety and the HTTP server (auth, CSRF, attribution, share links).
-- `npm run test:visual` renders the block gallery and the demo pages at desktop and phone widths in headless Chromium and compares them with `test/visual/baseline/`. It also fails if a page scrolls sideways on a phone. It needs Playwright (`npm i -D playwright && npx playwright install chromium`, or `NODE_PATH` pointing at a global install) and skips itself otherwise. Fallback fonts differ between machines, so make baselines where they're checked.
+- `npm test` covers the block contract, the core (drafts, conflicts, publishing, versions, restore, shares, checks, presence), the content model (migration, items, item pages and archives, tags, saved sections, visibility, looks, logo approval, feature switches, media, schedules, contact forms, the content API, templates, fallbacks, block upgrades), file-store safety and the HTTP server (auth, CSRF, attribution, share links, media files, contact forms, the content API).
+- `npm run test:visual` renders the block gallery and demo pages (home, about, an event page, the automatic people list) at desktop and phone widths in headless Chromium and compares them with `test/visual/baseline/`. It also fails if a page scrolls sideways on a phone. It needs Playwright (`npm i -D playwright && npx playwright install chromium`, or `NODE_PATH` pointing at a global install) and skips itself otherwise. Fallback fonts differ between machines, so make baselines where they're checked.
 
 ## Not done yet (deliberately)
 
-- Cloudflare deploy, logins per chapter lead (the editor asks for a name for now), image upload (URL fields only), multisite management.
-- Events, posts and so on live inside their block, so the home page and events page each hold their own list. A shared per-chapter list (so a Luma sync has one place to write) is the likely next step.
-- Dates are stored as local wall-clock times; add the timezone offset when the Luma sync lands.
-- Design: Yard Sign. Each chapter picks one color (Settings, "Colors and logo"); text and tint colors derive from it. Typekit Pragmatica Extended is not loaded, so Archivo (expanded) from Google Fonts stands in. To swap designs later, edit `static/site.css` and the wrapper in `lib/render.js`.
+- Cloudflare deploy, logins and roles (the editor asks for a name for now, and national settings are open to every editor), multisite management, Luma and Action Network syncs, email delivery of contact messages (they wait in Messages).
+- Dates are stored as local wall-clock times in the chapter's timezone.
+- Design is barebones on purpose: Yard Sign and Plain styles. Typekit Pragmatica Extended is not loaded, so Archivo (expanded) from Google Fonts stands in. New styles go in `static/site.css` under a `.style-<name>` class and in `STYLES` in `lib/theme.js`.

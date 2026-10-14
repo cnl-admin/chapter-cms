@@ -77,9 +77,10 @@ test('columns: atoms only, column count follows the layout', () => {
   assert.throws(() => B.validateBlocks([{ type: 'columns', props: { layout: 'halves', cols: [[{ type: 'hero', props: {} }], []] } }]));
 });
 test('past events are hidden by default; times are wall-clock', () => {
-  const h = B.renderBlock({ type: 'events_list', props: { heading: 'E', events: [{ title: 'Old', start: '2020-01-01T10:00' }, { title: 'New', start: '2999-01-01T10:00' }] } });
+  const data = { now: '2026-10-14T12:00', items: { events: [{ id: 'old', title: 'Old', start: '2020-01-01T10:00' }, { id: 'new', title: 'New', start: '2999-01-01T10:00' }] }, features: {} };
+  const h = B.renderBlock({ type: 'events_list', v: 2, props: B.defaultsFor('events_list') }, { data });
   assert.ok(!h.includes('Old') && h.includes('New'));
-  const t = B.renderBlock({ type: 'events_list', props: { heading: 'E', show_past: 'Yes', events: [{ title: 'T', start: '2026-11-05T18:30' }] } });
+  const t = B.renderBlock({ type: 'events_list', v: 2, props: { ...B.defaultsFor('events_list'), show: 'All' } }, { data: { ...data, items: { events: [{ id: 't', title: 'T', start: '2026-11-05T18:30' }] } } });
   assert.match(t, /6:30 PM/);
 });
 test('empty sign-up and calendar links fall back to Settings > Connections', () => {

@@ -1,18 +1,18 @@
 /* "Yard Sign" design: one chapter color for header, hero and footer bands; navy rules, hard offset shadows,
    expanded uppercase sign type over a serif body. Colors come from :root vars set per chapter in render.js. */
-:root{--ch:#C23B4F;--navy:#2C3659;--paper:#FDFBE9;--ink:#22293f;--on-ch:#fff;--ch-text:#a42f41;--ch-tint:#f7e2dd}
+:root{--ch:#C23B4F;--navy:#2C3659;--paper:#FDFBE9;--ink:#22293f;--on-ch:#fff;--ch-text:#a42f41;--ch-tint:#f7e2dd;--font-sign:"Archivo",sans-serif;--font-body:"Domine",Georgia,serif;--sign-stretch:125%}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.7 "Domine",Georgia,serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.7 var(--font-body);-webkit-font-smoothing:antialiased}
 img{max-width:100%;display:block}
 a{color:var(--navy)}a:hover{color:var(--ch-text)}
 :focus-visible{outline:3px solid var(--ch);outline-offset:3px}
 .wrap{max-width:1200px;margin:0 auto;padding-left:clamp(20px,4vw,40px);padding-right:clamp(20px,4vw,40px)}
-.sign,.cap,.btn,nav a,.brand{font-family:"pragmatica-extended","Archivo",sans-serif;font-stretch:125%;text-transform:uppercase}
+.sign,.cap,.btn,nav a,.brand{font-family:var(--font-sign);font-stretch:var(--sign-stretch);text-transform:uppercase}
 .sign{font-weight:900;line-height:.95;letter-spacing:-.01em}
 .cap,.meta{font-weight:800;letter-spacing:.04em;font-size:.75rem}
 h1,h2,h3{margin:0 0 .5em;color:var(--navy)}
 h1{font-size:clamp(2.6rem,7vw,6rem)}h2{font-size:clamp(2.1rem,4vw,3.25rem)}
-h3{font-size:1.4rem;line-height:1.3;font-family:"Domine",Georgia,serif}
+h3{font-size:1.4rem;line-height:1.3;font-family:var(--font-body)}
 .meta{color:var(--ch-text);margin:0 0 .5em}
 .top{background:var(--ch);color:var(--on-ch);border-bottom:4px solid var(--navy)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:14px 32px;flex-wrap:wrap;padding-top:16px;padding-bottom:16px}
@@ -70,7 +70,7 @@ footer a{color:inherit}footer p{margin:.3em 0}.foot-name{font-size:1.4rem;margin
 .flyer{position:relative;background:var(--paper);color:var(--ink);transform:rotate(var(--rot));box-shadow:6px 8px 0 rgba(0,0,0,.28)}
 .flyer .pin{position:absolute;top:-10px;left:50%;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--ch);border:3px solid var(--ink)}
 .flyer img{width:100%;aspect-ratio:16/9;object-fit:cover}
-.flyer .fbody{padding:32px 24px 22px}.flyer h3{font-size:1.75rem;line-height:.95;color:var(--navy);margin:0 0 12px}.flyer p{margin:.3em 0;font-size:1rem;line-height:1.6;color:var(--ink)}.flyer .meta{color:var(--ch-text)}
+.flyer .fbody{padding:32px 24px 22px}.flyer h3{font-size:1.75rem;line-height:.95;color:var(--navy);margin:0 0 12px}.flyer h3 a,.band.navy .flyer h3 a{color:inherit;font-weight:inherit;text-decoration:none}.flyer h3 a:hover{text-decoration:underline}.flyer p{margin:.3em 0;font-size:1rem;line-height:1.6;color:var(--ink)}.flyer .meta{color:var(--ch-text)}
 .tear{display:flex;border-top:2px dashed var(--ink);text-decoration:none;color:var(--navy)}
 .tab{flex:1;height:64px;border-right:2px dashed var(--ink);writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;font-size:11px}.tab:last-child{border-right:0}
 .tear:hover .tab{color:var(--ch-text)}
@@ -95,7 +95,7 @@ footer a{color:inherit}footer p{margin:.3em 0}.foot-name{font-size:1.4rem;margin
 .imgfig{margin:0}.imgfig img{width:100%;border:3px solid var(--navy);box-shadow:6px 6px 0 var(--ch)}
 .imgph{aspect-ratio:4/3;border:3px solid var(--navy);box-shadow:6px 6px 0 var(--ch);background:repeating-linear-gradient(135deg,var(--ch-tint) 0 10px,var(--paper) 10px 20px)}
 .imgfig figcaption{margin-top:.7rem;color:var(--ch-text)}.imgfig figcaption:empty{display:none}
-.signupbox{background:var(--ch-tint);border:3px solid var(--navy);box-shadow:6px 6px 0 var(--navy);padding:22px 24px}.signupbox h3{font-size:1.6rem;margin:0 0 .4em;font-family:"pragmatica-extended","Archivo",sans-serif}.signupbox p{margin:.3em 0 1rem}.signupbox .btn{margin-top:0}
+.signupbox{background:var(--ch-tint);border:3px solid var(--navy);box-shadow:6px 6px 0 var(--navy);padding:22px 24px}.signupbox h3{font-size:1.6rem;margin:0 0 .4em;font-family:var(--font-sign)}.signupbox p{margin:.3em 0 1rem}.signupbox .btn{margin-top:0}
 .socials{display:flex;flex-wrap:wrap;gap:8px 22px;margin:.4rem 0}.socials a{color:inherit;font-weight:800}
 .scol>.card .pad p{font-size:1rem}
 @media(max-width:700px){.cols{grid-template-columns:1fr!important;gap:28px}}
@@ -109,3 +109,36 @@ nav .navbtn{background:var(--navy);color:var(--paper);padding:8px 16px;border-bo
 .footlinks{display:flex;flex-wrap:wrap;gap:6px 22px}.footlinks a{font-weight:700}
 .disclaimer{display:inline-block;margin-top:1.2em!important;border:2px solid currentColor;padding:4px 10px;font-size:.8rem}
 .atomtext ul,.card ul,.fbody ul{margin:.5em 0;padding-left:1.2em}h3.sub{font-size:1.15rem;margin:1em 0 .3em}
+
+/* ---- Stage 2: item pages, lists, new blocks (barebones until the design pass) ---- */
+.detail h1{margin-top:.2em}.detail .back{margin:0 0 1rem}.detail .back a{text-decoration:none}.detail .lede{font-size:1.15rem}
+.detail img.cover{width:100%;max-height:520px;object-fit:cover;border:3px solid var(--navy);margin:1rem 0}.detail img.portrait{width:220px;aspect-ratio:1;object-fit:cover;border:3px solid var(--navy);margin-bottom:1rem}
+.detail .where{font-weight:700}.note{background:var(--ch-tint);border-left:5px solid var(--navy);padding:8px 14px;font-weight:700}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:1.4rem}.tags a{border:2px solid var(--navy);padding:4px 10px;text-decoration:none;color:var(--navy)}.tags a:hover{background:var(--navy);color:var(--paper)}
+.result{display:inline-block;padding:4px 10px;border:2px solid var(--navy)}.result.r-won,.result.r-passed{background:var(--navy);color:var(--paper)}
+.more{margin-top:1.4rem;font-weight:700}.band.navy .more a{color:var(--paper)}
+.emptybox{background:var(--ch-tint);border:3px solid var(--navy);padding:22px 24px;margin-top:1.2rem;color:var(--ink)}.emptybox p{margin:.3em 0}.emptybox a{color:var(--navy)}.emptymsg{font-style:italic}
+.faqi{border-bottom:2px solid var(--navy);padding:.6rem 0}.faqi summary{cursor:pointer;font-weight:700;font-size:1.1rem}.faqi h3{font-size:1.1rem;margin:0}
+.quote{margin:0;display:flex;gap:20px;align-items:flex-start}.quote blockquote{margin:0;font-size:clamp(1.2rem,2vw,1.5rem);line-height:1.5;border-left:6px solid var(--ch);padding-left:20px}.quote blockquote p{margin:0}
+.quote figcaption{margin-top:.6rem;padding-left:26px}.quote img.qphoto{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:none;border:3px solid var(--navy)}
+.videofig{margin:0}.embed{position:relative;aspect-ratio:16/9;border:3px solid var(--navy);background:#000}.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.embed.map{aspect-ratio:16/10;background:var(--ch-tint)}
+.imgph.video,.imgph.map{display:flex;align-items:center;justify-content:center;font:600 14px system-ui,sans-serif;aspect-ratio:16/9}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;margin-top:1rem}.gallery figure{margin:0}.gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border:3px solid var(--navy)}.gallery figcaption{font-size:.9rem;margin-top:.3rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;margin-top:1rem}.stat{border-top:6px solid var(--ch);padding-top:12px}.stat .num{display:block;font-size:clamp(2.4rem,5vw,3.6rem);color:var(--navy)}
+.mapcap{margin-top:.6rem}.maplink{margin-top:.4rem}
+.divider{max-width:1200px;margin:40px auto;border-top:3px solid var(--navy)}.divider.d-space{border:0;height:24px}.divider.d-stars{border:0;text-align:center;color:var(--ch-text);letter-spacing:.6em;font-size:1.3rem}
+.logos{display:flex;flex-wrap:wrap;gap:28px 40px;align-items:center;margin-top:1rem}.logos img{max-height:64px;width:auto}.logos a{text-decoration:none}.logoname{font-weight:800;font-size:1.1rem;color:var(--navy)}
+.tablewrap{overflow-x:auto;margin-top:1rem;border:3px solid var(--navy)}.tablewrap table{border-collapse:collapse;width:100%;min-width:520px;background:#fff}.tablewrap th,.tablewrap td{padding:10px 14px;border-bottom:1.5px solid var(--navy);text-align:left;vertical-align:top}.tablewrap th{background:var(--navy);color:var(--paper)}
+.contact{max-width:640px;margin-top:1rem;background:#fff;border:3px solid var(--navy);padding:22px 24px}.contact label{display:block;font-weight:700;margin:.6rem 0 .2rem}.contact input,.contact textarea{display:block;width:100%;font:inherit;padding:8px 10px;border:2px solid var(--navy);margin-top:.2rem}.contact .btn{margin-top:1rem;cursor:pointer}
+.hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media(max-width:700px){.only-desktop{display:none}.quote{flex-direction:column}}@media(min-width:701px){.only-phone{display:none}}
+
+/* ---- the "Plain" style (T1): the same content and colours with quieter shapes; switching never touches content */
+.style-plain .sign,.style-plain .cap,.style-plain .btn,.style-plain nav a,.style-plain .brand{text-transform:none;font-stretch:100%;letter-spacing:0}
+.style-plain .sign{font-weight:800;line-height:1.1}
+.style-plain .btn,.style-plain .card,.style-plain .cta,.style-plain .flyer,.style-plain .sticker,.style-plain .ballot,.style-plain .signupbox,.style-plain .imgfig img,.style-plain .imgph{box-shadow:none;border-radius:8px}
+.style-plain .flyer,.style-plain .sticker,.style-plain .ballot,.style-plain .signpost{transform:none}
+.style-plain .flyer .pin,.style-plain .stake,.style-plain .badge{display:none}.style-plain .signpost{margin-bottom:40px}
+.style-plain .signpanel{box-shadow:none;border-radius:12px;text-align:left}.style-plain .signpanel h1{font-size:clamp(32px,6vw,72px)}
+.style-plain .tab{writing-mode:horizontal-tb;transform:none;height:44px;border-right:0}.style-plain .tab~.tab{display:none}
+.style-plain .clip{clip-path:none;border-radius:8px}.style-plain .card,.style-plain .cta{border-width:2px}

@@ -26,9 +26,12 @@ const local = {
 };
 
 // Editor state, shared by every admin script.
+// The doc being edited is a page (kind 'page', slug) or a collection item (kind 'item', col, id); S.page holds its
+// content either way. S.lists holds every collection's items, for pickers and the content screen.
 const S = {
-  schema: null, layouts: null, atoms: [], chapters: [],
-  chapter: null, overview: null, slug: null,
+  schema: null, layouts: null, atoms: [], chapters: [], collections: {}, templates: [], features: {},
+  chapter: null, overview: null, lists: {},
+  kind: 'page', slug: null, col: null, id: null, back: null, path: '',
   page: null, rev: 0, draft: false, live: false, updated: null,
   sel: -1, selAtom: null, foc: null, openItems: new Set(), insertAt: null,
   mode: 'edit', panel: 'page', settingsSection: null, device: 'desktop', phone: false, sheet: false,
@@ -47,6 +50,36 @@ async function api(path, method = 'GET', body) {
   const data = type.includes('json') ? await r.json() : await r.text();
   if (!r.ok) throw Object.assign(new Error((data && (data.message || data.error)) || r.statusText), { status: r.status, data });
   return data;
+}
+
+// Uploaded images live at /media/<file>. The single-file demo has no server, so it supplies window.__mediaSrc to
+// show them from its in-browser store instead.
+const mediaSrc = (u) => (window.__mediaSrc ? window.__mediaSrc(u) : u);
+// Photos are shrunk in the browser before they upload (M1): at most 2000 pixels across, compressed, the camera's
+// rotation applied. Small PNGs and GIFs go up as they are, to keep transparency and animation.
+const b64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).replace(/^data:[^,]*,/, '')); r.onerror = rej; r.readAsDataURL(blob); });
+async function shrink(file, max = 2000) {
+  const url = URL.createObjectURL(file);
+  try {
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("That image couldn't be read. Try a JPEG or PNG.")); i.src = url; });
+    const w0 = im.naturalWidth, h0 = im.naturalHeight, s = Math.min(1, max / Math.max(w0, h0));
+    const alpha = /png|gif|webp/.test(file.type);
+    if (s === 1 && ((alpha && file.size < 500e3) || (file.type === 'image/jpeg' && file.size < 700e3))) return { data: await b64(file), w: w0, h: h0 };
+    const w = Math.round(w0 * s), h = Math.round(h0 * s), c = el('canvas', { width: w, height: h }), g = c.getContext('2d');
+    if (!alpha) { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); }
+    g.drawImage(im, 0, 0, w, h);
+    let blob = alpha ? await new Promise((r) => c.toBlob(r, 'image/webp', 0.86)) : null;
+    if (!blob || blob.type !== 'image/webp') blob = await new Promise((r) => c.toBlob(r, alpha ? 'image/png' : 'image/jpeg', 0.84));
+    return { data: await b64(blob), w, h };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function uploadImage(file, ch = S.chapter) {
+  if (!/^image\//.test(file.type)) throw new Error(`“${file.name}” isn't an image.`);
+  toast(`Uploading ${file.name}…`);
+  const { data, w, h } = await shrink(file, window.__DEMO ? 1200 : 2000); // the demo keeps photos in browser storage
+  const meta = await api(ch === 'national' ? 'national/media' : `chapter/${ch}/media`, 'POST', { data, name: file.name, w, h });
+  toast('Uploaded');
+  return meta;
 }
 
 // Times as people say them.
@@ -88,6 +121,15 @@ function ask(title, kids, buttons) {
     document.body.append(d); d.showModal();
     d.querySelector('input')?.focus();
   });
+}
+// A dialog that stacks on top of whatever is open (the media library, schedules), closed with the ✕ or Escape.
+function stackModal(title, kids, { wide = true } = {}) {
+  const d = el('dialog', { class: 'stack' + (wide ? ' wide' : '') });
+  const close = () => { d.close(); d.remove(); };
+  d.append(el('div', { class: 'dlghead' }, el('h2', {}, title), el('button', { class: 'x', 'aria-label': 'Close', onclick: close }, '✕')), el('div', { class: 'dlgbody' }, kids));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
+  return { close, body: d.querySelector('.dlgbody') };
 }
 const confirmBox = (msg, ok = 'OK', danger = false) => ask(msg, [], [{ label: 'Cancel', value: false }, { label: ok, value: true, class: danger ? 'danger solid' : 'primary' }]);
 function askText(title, label, value = '', ok = 'Save') {

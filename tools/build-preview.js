@@ -11,15 +11,20 @@ const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 // Inside an inline <script>, "</script" would end the script early.
 const safe = (s) => s.replace(/<\/(script)/gi, '<\\/$1');
 
-// Seed: the demo chapter's tracked files (not local drafts or history), in the store's key layout.
-let files;
-try { files = execFileSync('git', ['ls-files', 'data/demo'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean); } catch { files = []; }
-if (!files.length) files = ['data/demo/site.json', ...fs.readdirSync(path.join(root, 'data/demo/page')).map((f) => 'data/demo/page/' + f)];
-const seed = { demo: {} };
-for (const f of files.filter((x) => x.endsWith('.json'))) seed.demo[f.slice('data/demo/'.length, -5)] = JSON.parse(rd(f));
+// Seed: the demo chapter's and national's tracked files (not local drafts, history or uploads), in the store's key
+// layout ("data/demo/item/events/x.json" -> demo: "item/events/x").
+const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`]));
+const seed = {};
+for (const ch of ['demo', 'national']) {
+  let files;
+  try { files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', `data/${ch}`], { cwd: root, encoding: 'utf8' }).split('\n').filter((f) => f && fs.existsSync(path.join(root, f))); } catch { files = []; }
+  if (!files.length) files = walk(`data/${ch}`);
+  seed[ch] = {};
+  for (const f of files.filter((x) => x.endsWith('.json'))) seed[ch][f.slice(`data/${ch}/`.length, -5)] = JSON.parse(rd(f));
+}
 
-// lib modules, wrapped CommonJS-style. Order doesn't matter: require() loads on first use.
-const MODS = ['text', 'memstore', 'blocks', 'render', 'checks', 'cms', 'api'];
+// lib modules (all but the file store), wrapped CommonJS-style. Order doesn't matter: require() loads on first use.
+const MODS = fs.readdirSync(path.join(root, 'lib')).filter((f) => f.endsWith('.js') && f !== 'store.js').map((f) => f.slice(0, -3));
 const mod = (name) => `__m['./${name}']=function(module,exports,require){${rd(`lib/${name}.js`)}\n};`;
 
 const html = rd('admin/index.html');
@@ -43,15 +48,33 @@ var __m = {}, __cache = {};
 function __require(n) { if (__cache[n]) return __cache[n].exports; var m = __cache[n] = { exports: {} }; __m[n](m, m.exports, __require); return m.exports; }
 ${safe(MODS.map(mod).join('\n'))}
 (function () {
-  var KEY = 'chapter-cms-demo-v4', SEED = ${safe(JSON.stringify(seed))};
+  var KEY = 'chapter-cms-demo-v5', SEED = ${safe(JSON.stringify(seed))};
   var SITE_CSS = ${safe(JSON.stringify('<style>' + sitecss + '</style>'))};
   var data = null;
   try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* storage blocked */ }
   if (!data || !data.demo) data = JSON.parse(JSON.stringify(SEED));
-  var timer = 0;
-  var persist = function (d) { clearTimeout(timer); timer = setTimeout(function () { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* full or blocked */ } }, 300); };
+  var timer = 0, warned = false;
+  var persist = function (d) {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {
+        if (warned) return; warned = true; // full (photos fill it fast) or blocked
+        document.querySelector('#demoNote span').textContent = 'Demo: this browser has no room left to save the demo, so changes from now on last until you reload. Reset the demo or delete some photos to make room.';
+      }
+    }, 300);
+  };
   var store = new (__require('./memstore').MemoryStore)(data, persist);
   var cms = __require('./cms').createCms({ store: store });
+  setInterval(function () { cms.tickAll().catch(function () {}); }, 30000); // scheduled publishes, as the server does
+  // Uploaded photos: the site and the editor link to /media/<file>; with no server, show them from the store instead.
+  var mediaData = function (u) {
+    var m = /^\\/media\\/(?:(national)\\/)?([a-z0-9]+)\\.[a-z]+$/.exec(u); if (!m) return null;
+    var chs = m[1] ? ['national'] : Object.keys(data).filter(function (c) { return c !== 'national'; });
+    for (var i = 0; i < chs.length; i++) { var meta = data[chs[i]] && data[chs[i]]['media/' + m[2]]; if (meta) return store.dataUrl(chs[i], 'blob/' + m[2], meta.type); }
+    return null;
+  };
+  window.__mediaSrc = function (u) { return mediaData(u) || u; };
+  var withMedia = function (h) { return h.replace(/\\/media\\/(?:national\\/)?[a-z0-9]+\\.[a-z]+/g, function (u) { return mediaData(u) || u; }); };
   var A = __require('./api');
   var api = A.createApi({ cms: cms, editAssets: ${safe(JSON.stringify(editAssets))} });
   var realFetch = window.fetch ? window.fetch.bind(window) : null;
@@ -63,7 +86,7 @@ ${safe(MODS.map(mod).join('\n'))}
     var req = { method: o.method || 'GET', path: url.slice('/admin/api/'.length), body: o.body ? JSON.parse(o.body) : undefined, user: user.trim().slice(0, 40) || 'Someone' };
     return api.handle(req).catch(A.errorResponse).then(function (r) {
       var isHtml = r.type === 'html';
-      var text = isHtml ? String(r.body).replace('<link rel="stylesheet" href="/static/site.css">', SITE_CSS) : JSON.stringify(r.body);
+      var text = isHtml ? withMedia(String(r.body).replace('<link rel="stylesheet" href="/static/site.css">', SITE_CSS)) : JSON.stringify(r.body);
       return new Response(text, { status: r.status, headers: { 'content-type': isHtml ? 'text/html' : 'application/json' } });
     });
   };

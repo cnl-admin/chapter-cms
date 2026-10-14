@@ -1,0 +1,20 @@
+{
+  "title": "Voter Registration Drive",
+  "start": "2026-10-24T10:00",
+  "end": "2026-10-24T13:00",
+  "location": "Farmers Market, Main St.",
+  "address": "",
+  "url": "https://lu.ma/example-2",
+  "cover_image": "",
+  "description": "Help your neighbors get registered before the deadline.",
+  "issues": [
+    "state-capacity"
+  ],
+  "luma_id": "evt-demo2",
+  "blocks": [],
+  "rev": 2,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
+}
