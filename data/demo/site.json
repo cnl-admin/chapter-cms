@@ -1,0 +1,43 @@
+{
+  "name": "Demo City Chapter",
+  "tagline": "Citizens for a New Liberalism, Demo City chapter",
+  "footer": "A chapter of Citizens for a New Liberalism. Sample content for the CMS demo.",
+  "contact_email": "demo@example.org",
+  "timezone": "America/Chicago",
+  "theme": {
+    "primary": "#2C3659",
+    "accent": "#C23B4F",
+    "logo": ""
+  },
+  "nav": [
+    {
+      "label": "Home",
+      "path": "/"
+    },
+    {
+      "label": "Events",
+      "path": "/events"
+    },
+    {
+      "label": "Issues",
+      "path": "/issues"
+    },
+    {
+      "label": "Endorsements",
+      "path": "/endorsements"
+    },
+    {
+      "label": "News & media",
+      "path": "/blog"
+    },
+    {
+      "label": "About",
+      "path": "/about"
+    }
+  ],
+  "social": {
+    "x": "@demochapter",
+    "ig": "demochapter",
+    "bsky": "demochapter.bsky.social"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "title": "Issues",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "i1",
+      "type": "issue_cards",
+      "props": {
+        "heading": "Our priorities",
+        "items": [
+          {
+            "title": "Housing abundance",
+            "summary": "Build more homes, of every kind, near jobs and transit.",
+            "url": ""
+          },
+          {
+            "title": "Free trade",
+            "summary": "Open markets lower prices and raise living standards.",
+            "url": ""
+          },
+          {
+            "title": "State capacity",
+            "summary": "Government should be able to build things and deliver results.",
+            "url": ""
+          }
+        ]
+      }
+    }
+  ]
+}

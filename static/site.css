@@ -1,0 +1,101 @@
+/* "Yard Sign" design: one chapter color for header, hero and footer bands; navy rules, hard offset shadows,
+   expanded uppercase sign type over a serif body. Colors come from :root vars set per chapter in render.js. */
+:root{--ch:#C23B4F;--navy:#2C3659;--paper:#FDFBE9;--ink:#22293f;--on-ch:#fff;--ch-text:#a42f41;--ch-tint:#f7e2dd}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.7 "Domine",Georgia,serif;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--navy)}a:hover{color:var(--ch-text)}
+:focus-visible{outline:3px solid var(--ch);outline-offset:3px}
+.wrap{max-width:1200px;margin:0 auto;padding-left:clamp(20px,4vw,40px);padding-right:clamp(20px,4vw,40px)}
+.sign,.cap,.btn,nav a,.brand{font-family:"pragmatica-extended","Archivo",sans-serif;font-stretch:125%;text-transform:uppercase}
+.sign{font-weight:900;line-height:.95;letter-spacing:-.01em}
+.cap,.meta{font-weight:800;letter-spacing:.04em;font-size:.75rem}
+h1,h2,h3{margin:0 0 .5em;color:var(--navy)}
+h1{font-size:clamp(2.6rem,7vw,6rem)}h2{font-size:clamp(2.1rem,4vw,3.25rem)}
+h3{font-size:1.4rem;line-height:1.3;font-family:"Domine",Georgia,serif}
+.meta{color:var(--ch-text);margin:0 0 .5em}
+.top{background:var(--ch);color:var(--on-ch);border-bottom:4px solid var(--navy)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:14px 32px;flex-wrap:wrap;padding-top:16px;padding-bottom:16px}
+.brand{display:flex;align-items:center;gap:.7rem;color:var(--on-ch);text-decoration:none;font-size:1.15rem}.brand:hover{color:var(--on-ch)}.brand img{height:50px;width:auto}
+nav{display:flex;gap:4px 24px;flex-wrap:wrap}
+nav a{color:var(--on-ch);text-decoration:none;font-weight:700;font-size:.85rem;letter-spacing:.03em;padding:10px 0;border-bottom:3px solid transparent}
+nav a:hover,nav a[aria-current]{color:var(--on-ch);border-bottom-color:var(--on-ch)}
+.hero{background:var(--ch) center/cover;color:var(--on-ch);border-bottom:4px solid var(--navy);padding:56px 0}
+.hero h1{color:var(--on-ch);margin-bottom:.3em;max-width:14ch}.hero .lede{font-size:clamp(1.1rem,1.6vw,1.3rem);max-width:56ch;margin:0 0 1.6rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;background:var(--navy);color:var(--paper);border:3px solid var(--navy);text-decoration:none;font-weight:800;font-size:.9rem;letter-spacing:.03em;box-shadow:5px 5px 0 var(--ch);transition:transform .12s ease;margin-top:.6rem}
+.btn:hover{color:var(--paper);transform:translate(-2px,-2px)}
+.btn.paper{background:var(--paper);color:var(--navy);box-shadow:5px 5px 0 var(--navy)}.btn.paper:hover{color:var(--navy)}
+.btn.ch{background:var(--ch);color:var(--on-ch);box-shadow:5px 5px 0 var(--paper)}.btn.ch:hover{color:var(--on-ch)}
+.block{padding-top:56px;padding-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:28px;margin-top:1.4rem}
+.card{background:#fff;border:3px solid var(--navy);box-shadow:6px 6px 0 var(--ch);display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:16/9;object-fit:cover;border-bottom:3px solid var(--navy)}
+.card .pad{padding:20px 22px 24px}.card p{margin:.4em 0}
+.rows,.split{margin-top:1.4rem}.rows{display:flex;flex-direction:column;gap:30px;min-width:0}
+.split{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}.split>.rows{flex:999 1 520px;margin-top:0}
+.post{display:flex;gap:22px;align-items:flex-start}.post>div:last-child{min-width:0;flex:1}.post p{margin:.3em 0}
+.post img{max-width:420px;border:3px solid var(--navy);margin-bottom:12px}
+.post h3{margin:0 0 8px}.post h3 a{color:var(--ink);text-decoration:none}.post h3 a:hover{color:var(--ch-text);text-decoration:underline}
+.date{flex:none;width:78px;text-align:center;background:var(--ch);color:var(--on-ch);border:3px solid var(--navy);padding:8px 0 10px}
+.date .cap{font-size:.75rem}.date .sign{font-size:2.1rem;line-height:1}
+.cta{background:var(--navy);color:var(--paper);border:3px solid var(--navy);box-shadow:10px 10px 0 var(--ch);padding:clamp(28px,4vw,48px)}
+.cta h2{color:var(--paper)}.cta p{max-width:60ch;color:#e9e5cf}
+.clips{flex:1 1 300px;display:flex;flex-direction:column;gap:30px;min-width:0}.clips>h3{margin:0;color:var(--navy);font-size:1.1rem}
+.clipwrap{filter:drop-shadow(5px 6px 0 rgba(34,41,63,.22))}
+.clip{background:#fff;padding:20px 22px 34px;clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),96.875% 100%,93.75% calc(100% - 8px),90.625% 100%,87.5% calc(100% - 8px),84.375% 100%,81.25% calc(100% - 8px),78.125% 100%,75% calc(100% - 8px),71.875% 100%,68.75% calc(100% - 8px),65.625% 100%,62.5% calc(100% - 8px),59.375% 100%,56.25% calc(100% - 8px),53.125% 100%,50% calc(100% - 8px),46.875% 100%,43.75% calc(100% - 8px),40.625% 100%,37.5% calc(100% - 8px),34.375% 100%,31.25% calc(100% - 8px),28.125% 100%,25% calc(100% - 8px),21.875% 100%,18.75% calc(100% - 8px),15.625% 100%,12.5% calc(100% - 8px),9.375% 100%,6.25% calc(100% - 8px),3.125% 100%,0 calc(100% - 8px))}
+.clip .outlet{margin:0 0 10px;padding-bottom:8px;border-bottom:1.5px solid var(--ink);font-weight:700;font-size:.85rem}
+.clip h3{font-size:1.25rem;margin:0 0 6px}.clip h3 a{color:var(--ink);text-decoration:none}.clip p{margin:.3em 0;font-size:.95rem}
+.muted{color:#5b6178}
+footer{margin-top:72px;background:var(--ch);color:var(--on-ch);border-top:4px solid var(--navy);padding:44px 0 32px;font-size:.95rem}
+footer a{color:inherit}footer p{margin:.3em 0}.foot-name{font-size:1.4rem;margin-bottom:.5em!important}
+@media(max-width:600px){body{font-size:16px}h1{font-size:clamp(1.5rem,7.6vw,2.4rem)}h2{font-size:1.7rem}.sign{overflow-wrap:anywhere}.hero h1{max-width:none}nav{gap:0 16px}nav a{font-size:.7rem;padding:6px 0;line-height:1.2}.brand{font-size:.95rem}.bar{padding-top:12px;padding-bottom:6px}.btn{min-height:48px;padding:0 20px}.card .pad{padding:16px}.post img{max-width:100%}.post{gap:14px}.date{width:62px}.date .sign{font-size:1.7rem}.hero{padding:40px 0}}
+@media(prefers-reduced-motion:reduce){.btn{transition:none}}
+
+/* ---- Yard Sign components (from the C-Home board) ---- */
+.signhero{padding-top:60px;overflow:hidden;border-bottom:4px solid var(--navy)}
+.signwrap{display:flex;justify-content:center}
+.signpost{position:relative;width:100%;max-width:980px;margin-bottom:84px;transform:rotate(var(--rot,-.8deg))}
+.signpanel{background:var(--ch);border:4px solid var(--navy);box-shadow:inset 0 0 0 12px var(--ch),inset 0 0 0 17px var(--on-ch);padding:clamp(40px,6vw,76px) clamp(28px,5vw,64px);text-align:center}
+.signpanel h1{margin:0;color:var(--on-ch);font-size:clamp(34px,8.2vw,108px);max-width:none;overflow-wrap:normal}
+.signcap{margin:28px 0 0;color:var(--on-ch);font-size:clamp(12px,1.4vw,17px);letter-spacing:.08em}
+.badge{position:absolute;right:-22px;top:-40px;width:clamp(100px,15vw,172px);height:clamp(100px,15vw,172px);border-radius:50%;background:var(--navy);border:5px solid var(--paper);box-shadow:0 0 0 3px var(--navy),6px 8px 0 rgba(34,41,63,.25);display:flex;align-items:center;justify-content:center;transform:rotate(12deg);color:var(--paper)}
+.badge .sign{font-size:clamp(28px,5vw,56px);color:var(--paper)}.badge img{width:80%;height:auto}
+.stake{position:absolute;bottom:-84px;width:10px;height:84px;background:var(--navy)}
+.intro{display:flex;flex-wrap:wrap;gap:24px 48px;align-items:center;justify-content:space-between;padding-top:44px;padding-bottom:48px}
+.intro p{flex:1 1 420px;max-width:640px;margin:0;font-size:clamp(18px,1.6vw,21px)}.intro .btns{display:flex;flex-wrap:wrap;gap:16px}.intro .btn{margin-top:0}
+.band{padding:64px 0 76px}.band.navy{background:var(--navy);color:var(--paper)}.band.tint{background:var(--ch-tint);border-top:4px solid var(--navy);border-bottom:4px solid var(--navy)}
+.bandhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:40px}
+.band.navy h2{color:var(--paper);margin:0}.band.navy a{color:var(--paper);font-weight:700}.onnavy{color:var(--paper)}
+.flyers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(290px,100%),1fr));gap:40px 36px}
+.flyer{position:relative;background:var(--paper);color:var(--ink);transform:rotate(var(--rot));box-shadow:6px 8px 0 rgba(0,0,0,.28)}
+.flyer .pin{position:absolute;top:-10px;left:50%;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--ch);border:3px solid var(--ink)}
+.flyer img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.flyer .fbody{padding:32px 24px 22px}.flyer h3{font-size:1.75rem;line-height:.95;color:var(--navy);margin:0 0 12px}.flyer p{margin:.3em 0;font-size:1rem;line-height:1.6;color:var(--ink)}.flyer .meta{color:var(--ch-text)}
+.tear{display:flex;border-top:2px dashed var(--ink);text-decoration:none;color:var(--navy)}
+.tab{flex:1;height:64px;border-right:2px dashed var(--ink);writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;font-size:11px}.tab:last-child{border-right:0}
+.tear:hover .tab{color:var(--ch-text)}
+.stickers{display:flex;flex-direction:column;gap:22px;margin-top:1.6rem}
+.sticker{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 32px;padding:22px 30px;border:3px solid var(--navy);border-radius:14px;box-shadow:5px 5px 0 var(--navy);text-decoration:none;transform:rotate(var(--rot))}
+.sticker .sign{font-size:clamp(26px,3.6vw,46px)}.sticker .why{flex:1 1 320px;max-width:480px;font-size:1.05rem;line-height:1.55}
+.sticker.v0,.sticker.v3{background:var(--ch);color:var(--on-ch)}.sticker.v1{background:var(--navy);color:var(--paper);box-shadow:5px 5px 0 var(--ch)}.sticker.v2{background:#fff;color:var(--navy)}
+.split2{display:flex;flex-wrap:wrap;gap:40px 56px;align-items:center}.slateintro{flex:1 1 340px;max-width:460px}.slateintro h2{margin:0 0 18px}.slateintro p{margin:0 0 20px}
+.ballot{flex:1.2 1 440px;background:#fff;border:3px solid var(--ink);box-shadow:8px 8px 0 var(--navy);transform:rotate(-1.6deg)}
+.ballothead{margin:0;padding:12px 20px;background:var(--ink);color:#fff;font-size:.8rem}
+.ballotrow{display:flex;align-items:flex-start;gap:18px;padding:16px 20px;border-bottom:2px solid var(--ink);margin:0}.ballotrow:last-child{border-bottom:0}
+.oval{flex:none;width:44px;height:26px;border-radius:50%;border:2.5px solid var(--ink);background:var(--ch);margin-top:4px}
+.meta2{margin:0;font-size:.75rem;color:#4a4f63}.cand{margin:2px 0 0;font-size:1.25rem;font-weight:700}.cand a{color:var(--ink);text-decoration:none}.cand a:hover{text-decoration:underline}
+.why2 p{margin:.3em 0;font-size:.95rem;line-height:1.5}
+.joinband{padding:72px 0 80px}.joinband h2{font-size:clamp(48px,7vw,96px)}.joinband p{max-width:34ch;font-size:1.2rem;color:#e9e5cf}
+@media(max-width:600px){.signhero{padding-top:40px}.signpost{margin-bottom:64px}.stake{height:64px;bottom:-64px}.badge{right:-8px;top:-30px}.signpanel{padding:36px 20px;box-shadow:inset 0 0 0 8px var(--ch),inset 0 0 0 11px var(--on-ch)}.signpanel h1{font-size:clamp(26px,9vw,40px)}.ballot{transform:none}.sticker{padding:18px 20px}.band{padding:48px 0 56px}}
+.band.navy .tear{color:var(--navy);font-weight:800}.band.navy .tear:hover{color:var(--ch-text)}
+
+/* ---- columns and single blocks ---- */
+.cols{display:grid;gap:36px;align-items:start;margin-top:.4rem}.scol{min-width:0;display:flex;flex-direction:column;gap:22px}
+.cols h2{font-size:clamp(1.7rem,3vw,2.4rem)}.atomtext p{margin:.5em 0}.atomtext h2{margin-top:0}
+.imgfig{margin:0}.imgfig img{width:100%;border:3px solid var(--navy);box-shadow:6px 6px 0 var(--ch)}
+.imgph{aspect-ratio:4/3;border:3px solid var(--navy);box-shadow:6px 6px 0 var(--ch);background:repeating-linear-gradient(135deg,var(--ch-tint) 0 10px,var(--paper) 10px 20px)}
+.imgfig figcaption{margin-top:.7rem;color:var(--ch-text)}.imgfig figcaption:empty{display:none}
+.signupbox{background:var(--ch-tint);border:3px solid var(--navy);box-shadow:6px 6px 0 var(--navy);padding:22px 24px}.signupbox h3{font-size:1.6rem;margin:0 0 .4em;font-family:"pragmatica-extended","Archivo",sans-serif}.signupbox p{margin:.3em 0 1rem}.signupbox .btn{margin-top:0}
+.socials{display:flex;flex-wrap:wrap;gap:8px 22px;margin:.4rem 0}.socials a{color:inherit;font-weight:800}
+.scol>.card .pad p{font-size:1rem}
+@media(max-width:700px){.cols{grid-template-columns:1fr!important;gap:28px}}

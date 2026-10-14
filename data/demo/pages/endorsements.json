@@ -1,0 +1,35 @@
+{
+  "title": "Endorsements",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "n1",
+      "type": "endorsements_list",
+      "props": {
+        "heading": "Our slate",
+        "items": [
+          {
+            "name": "Jordan Lee",
+            "office": "City Council, District 4",
+            "election": "Nov 2026",
+            "photo": "",
+            "statement": "Jordan has led on **zoning reform** and transit funding.",
+            "url": "https://example.org"
+          },
+          {
+            "name": "Measure H",
+            "office": "Ballot measure",
+            "election": "Nov 2026",
+            "photo": "",
+            "statement": "Allows more homes near transit.",
+            "url": ""
+          }
+        ],
+        "intro": "Election Day is Tuesday, November 3. Here is who we are voting for, and why.",
+        "ballot_title": "Sample ballot: Demo City Chapter"
+      }
+    }
+  ]
+}

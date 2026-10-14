@@ -1,0 +1,56 @@
+{
+  "title": "Events",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "e1",
+      "type": "text",
+      "props": {
+        "heading": "Events",
+        "body": "Everything on our calendar. RSVP through Luma."
+      }
+    },
+    {
+      "id": "e2",
+      "type": "events_list",
+      "props": {
+        "heading": "Show up.",
+        "luma_calendar_url": "https://lu.ma/example",
+        "events": [
+          {
+            "id": "evt-demo1",
+            "title": "Monthly Meetup: Housing and Zoning",
+            "start": "2026-11-05T18:30",
+            "end": "2026-11-05T20:30",
+            "location": "Riverside Taproom",
+            "url": "https://lu.ma/example-1",
+            "cover_image": "",
+            "description": "Casual drinks and a discussion of the **city housing plan**. All welcome, no experience needed."
+          },
+          {
+            "id": "evt-demo2",
+            "title": "Voter Registration Drive",
+            "start": "2026-10-24T10:00",
+            "end": "2026-10-24T13:00",
+            "location": "Farmers Market, Main St.",
+            "url": "https://lu.ma/example-2",
+            "cover_image": "",
+            "description": "Help your neighbors get registered before the deadline."
+          },
+          {
+            "id": "evt-demo3",
+            "title": "Book Club: Abundance",
+            "start": "2026-11-19T19:00",
+            "end": "2026-11-19T20:30",
+            "location": "Public Library, Room B",
+            "url": "https://lu.ma/example-3",
+            "cover_image": "",
+            "description": "We read it, we argue about it."
+          }
+        ]
+      }
+    }
+  ]
+}

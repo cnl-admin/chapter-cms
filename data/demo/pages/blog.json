@@ -1,0 +1,49 @@
+{
+  "title": "News & media",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "posts_list",
+      "props": {
+        "heading": "News & media",
+        "posts": [
+          {
+            "title": "We registered 40 voters",
+            "date": "2026-09-20T12:00",
+            "type": "Post",
+            "image": "",
+            "excerpt": "Thanks to everyone who came out on Saturday.",
+            "url": ""
+          },
+          {
+            "title": "Chapter lead on local radio",
+            "date": "2026-10-02T12:00",
+            "type": "Podcast",
+            "image": "",
+            "excerpt": "Listen to Alex talk housing.",
+            "url": "https://example.org/podcast"
+          },
+          {
+            "title": "Chapter lead quoted on the housing plan",
+            "date": "2026-10-02T12:00",
+            "type": "Press",
+            "image": "",
+            "excerpt": "Alex Rivera on why the city should legalize more homes near transit.",
+            "url": "https://example.org/press"
+          },
+          {
+            "title": "Book club recap: Abundance, part one",
+            "date": "2026-09-03T12:00",
+            "type": "Post",
+            "image": "",
+            "excerpt": "Our take on the first half of the book.",
+            "url": ""
+          }
+        ]
+      }
+    }
+  ]
+}

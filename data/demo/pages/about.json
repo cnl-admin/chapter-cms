@@ -1,0 +1,78 @@
+{
+  "title": "About",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "a1",
+      "type": "columns",
+      "props": {
+        "layout": "wideL",
+        "cols": [
+          [
+            {
+              "id": "x1",
+              "type": "text",
+              "props": {
+                "heading": "About our chapter",
+                "body": "We are a group of neighbors who believe in **abundance, openness, and good governance**.\n\nWe meet monthly. Learn more at [cnliberalism.org](https://cnliberalism.org)."
+              }
+            },
+            {
+              "id": "x2",
+              "type": "button",
+              "props": {
+                "label": "Volunteer with us",
+                "url": "/events",
+                "style": "Chapter color"
+              }
+            }
+          ],
+          [
+            {
+              "id": "x3",
+              "type": "image",
+              "props": {
+                "src": "",
+                "alt": "",
+                "caption": "Chapter meetup, spring"
+              }
+            },
+            {
+              "id": "x4",
+              "type": "signup",
+              "props": {
+                "heading": "Stay in the loop",
+                "blurb": "One email a week, at most. Usually fewer.",
+                "button_label": "Sign up",
+                "button_url": "https://example.org/signup"
+              }
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "a2",
+      "type": "people_grid",
+      "props": {
+        "heading": "Chapter leads",
+        "people": [
+          {
+            "name": "Alex Rivera",
+            "role": "Chapter lead",
+            "photo": "",
+            "bio": "Organizing since 2024."
+          },
+          {
+            "name": "Sam Okafor",
+            "role": "Events",
+            "photo": "",
+            "bio": "Keeps the taproom reservations straight."
+          }
+        ]
+      }
+    }
+  ]
+}

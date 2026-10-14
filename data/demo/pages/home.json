@@ -1,0 +1,87 @@
+{
+  "title": "Home",
+  "seo_title": "",
+  "seo_description": "Demo City chapter of Citizens for a New Liberalism",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "h1",
+      "type": "hero",
+      "props": {
+        "heading": "More homes.\nMore trains.\nMore Demo City.",
+        "subheading": "Demo City Chapter",
+        "badge_text": "DC",
+        "image": "",
+        "intro": "We are the local chapter of Citizens for a New Liberalism. We knock doors, pack zoning hearings, endorse candidates, and throw a good happy hour.",
+        "button_label": "Join the chapter",
+        "button_url": "/about",
+        "button2_label": "Find an event",
+        "button2_url": "/events"
+      }
+    },
+    {
+      "id": "h2",
+      "type": "events_list",
+      "props": {
+        "heading": "Show up.",
+        "luma_calendar_url": "https://lu.ma/example",
+        "events": [
+          {
+            "id": "evt-demo1",
+            "title": "Monthly Meetup: Housing and Zoning",
+            "start": "2026-11-05T18:30",
+            "end": "2026-11-05T20:30",
+            "location": "Riverside Taproom",
+            "url": "https://lu.ma/example-1",
+            "cover_image": "",
+            "description": "Casual drinks and a discussion of the **city housing plan**. All welcome, no experience needed."
+          },
+          {
+            "id": "evt-demo2",
+            "title": "Voter Registration Drive",
+            "start": "2026-10-24T10:00",
+            "end": "2026-10-24T13:00",
+            "location": "Farmers Market, Main St.",
+            "url": "https://lu.ma/example-2",
+            "cover_image": "",
+            "description": "Help your neighbors get registered before the deadline."
+          }
+        ]
+      }
+    },
+    {
+      "id": "h3",
+      "type": "issue_cards",
+      "props": {
+        "heading": "What we're fighting for",
+        "items": [
+          {
+            "title": "Housing abundance",
+            "summary": "Build more homes, of every kind, near jobs and transit.",
+            "url": ""
+          },
+          {
+            "title": "Free trade",
+            "summary": "Open markets lower prices and raise living standards.",
+            "url": ""
+          },
+          {
+            "title": "State capacity",
+            "summary": "Government should be able to build things and deliver results.",
+            "url": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "h4",
+      "type": "cta",
+      "props": {
+        "heading": "Get involved",
+        "body": "Our chapter runs on volunteers. **Pitch in** wherever you can.",
+        "button_label": "Contact us",
+        "button_url": "mailto:demo@example.org"
+      }
+    }
+  ]
+}
