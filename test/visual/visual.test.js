@@ -12,8 +12,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { renderPage } = require('../../lib/render');
-const { blocks, sampleFor } = require('../../lib/blocks');
+const { setup } = require('../helpers');
 
 let chromium = null;
 for (const m of ['playwright', '@playwright/test']) { try { chromium = require(m).chromium; break; } catch { /* try the next */ } }
@@ -56,19 +55,18 @@ function diffShare(a, b) {
   return n / (a.w * a.h);
 }
 
-// Pages to check: every block with sample content, plus the demo chapter's pages as chapter leads see them.
+// Pages to check: every block with sample content, plus demo pages as chapter leads see them, rendered by the CMS
+// itself from the demo data so saved sections, item lists and the chapter's look all come through.
 const css = fs.readFileSync(path.join(__dirname, '../../static/site.css'), 'utf8');
-const site = JSON.parse(fs.readFileSync(path.join(__dirname, '../../data/demo/site.json'), 'utf8'));
-const pageFile = (slug) => JSON.parse(fs.readFileSync(path.join(__dirname, '../../data/demo/page', slug + '.json'), 'utf8'));
-function html(page, slug, opts = {}) {
-  const realNow = Date.now; Date.now = () => NOW.getTime();
-  try { return renderPage(site, page, { pageSlug: slug, now: NOW, ...opts }).replace('<link rel="stylesheet" href="/static/site.css">', `<style>${css}</style>`); }
-  finally { Date.now = realNow; }
-}
+const { cms } = setup({ at: NOW.toISOString() });
+const inline = (h) => h.replace('<link rel="stylesheet" href="/static/site.css">', `<style>${css}</style>`);
+const live = (p) => async () => inline((await cms.renderLive('demo', p)).html);
 const PAGES = {
-  gallery: () => html({ title: 'Block gallery', blocks: Object.keys(blocks).map((type, i) => ({ id: 'g' + i, type, props: sampleFor(type) })) }, '', { preview: true, labels: true }),
-  home: () => html(pageFile('home'), 'home'),
-  about: () => html(pageFile('about'), 'about'),
+  gallery: async () => inline(await cms.gallery('demo')),
+  home: live(''),
+  about: live('about'),
+  event: live('events/voter-registration-drive'),
+  people: live('people'),
 };
 const SIZES = { desktop: { width: 1200, height: 800 }, phone: { width: 390, height: 844 } };
 
@@ -82,7 +80,7 @@ test('visual: pages match their baselines', { skip: chromium ? false : 'Playwrig
       const page = await ctx.newPage();
       for (const [name, make] of Object.entries(PAGES)) {
         await t.test(`${name} (${size})`, async () => {
-          await page.setContent(make(), { waitUntil: 'load' });
+          await page.setContent(await make(), { waitUntil: 'load' });
           const shot = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
           const file = path.join(BASE, `${name}-${size}.png`);
           // Phones must never scroll sideways.

@@ -1,15 +1,26 @@
 'use strict';
-// Editor core: the current page's data, the preview frame, undo/redo, autosave, conflicts and presence.
+// Editor core: the current doc's data, the preview frame, undo/redo, autosave, conflicts and presence.
+// The doc is a page, or a collection item (an event, a post, a person...) with its fields and its own sections.
 // Text is edited in place inside the frame (admin/frame.js); the side panel lives in panel.js.
 
 const frameWin = () => $('#preview').contentWindow;
 const say = (m) => { try { frameWin().postMessage(m, '*'); } catch { /* frame not ready */ } };
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return false; [arr[i], arr[j]] = [arr[j], arr[i]]; return true; };
-const docName = () => (S.panel === 'settings' ? '@site' : S.slug);
+// The doc being edited, named the way the API names it: a page slug or @<collection>-<id>.
+const curDoc = () => (S.kind === 'item' ? `@${S.col}-${S.id}` : S.slug);
+const docName = () => (S.panel === 'settings' ? '@site' : curDoc());
+const docPath = () => (S.kind === 'item' ? `item/${S.col}/${S.id}` : `page/${S.slug}`);
+const colDef = () => (S.kind === 'item' ? S.collections[S.col] : null);
+const docTitle = () => (S.kind === 'item' ? String(S.page?.[colDef().titleKey] || 'Untitled') : S.page?.title || '');
+const docWord = () => (S.kind === 'item' ? colDef().one : 'page');
+const versioned = (type) => (S.schema[type].version > 1 ? { v: S.schema[type].version } : {});
 
-// ---------- data paths: "<block>.<key>", "<block>.<list>.<item>.<key>" or "<block>.cols.<col>.<atom>.<key>"
+// ---------- data paths: "<block>.<key>", "<block>.<list>.<item>.<key>", "<block>.cols.<col>.<atom>.<key>", or
+// "f.<key>" for one of an item's own fields
 function getTarget(path) {
-  const p = String(path).split('.'), b = S.page.blocks[+p[0]];
+  const p = String(path).split('.');
+  if (p[0] === 'f') { const f = colDef()?.fields.find((x) => x.key === p[1]); return f ? { obj: S.page, key: p[1], type: null, field: f } : null; }
+  const b = S.page.blocks[+p[0]];
   if (!b) return null;
   if (p[1] === 'cols') { const a = (b.props.cols[+p[2]] || [])[+p[3]]; return a ? { obj: a.props, key: p[4], type: a.type } : null; }
   if (p.length === 2) return { obj: b.props, key: p[1], type: b.type };
@@ -19,6 +30,7 @@ const getPath = (path) => { const t = getTarget(path); return t && t.obj ? t.obj
 function setPath(path, v) { const t = getTarget(path); if (t && t.obj) t.obj[t.key] = v; }
 function fieldDef(path) {
   const t = getTarget(path); if (!t) return null;
+  if (t.field) return t.field;
   const def = S.schema[t.type];
   return t.list ? def.fields.find((f) => f.key === t.list)?.fields.find((f) => f.key === t.key) : def.fields.find((f) => f.key === t.key);
 }
@@ -62,9 +74,10 @@ function textChanges(a, b) {
     return true;
   };
   if (a.title !== b.title || a.blocks.length !== b.blocks.length) return null;
+  for (const f of colDef()?.fields || []) if (JSON.stringify(a[f.key]) !== JSON.stringify(b[f.key])) { if (!inPlace(f)) return null; out.push('f.' + f.key); }
   for (let i = 0; i < a.blocks.length; i++) {
     const x = a.blocks[i], y = b.blocks[i];
-    if (x.id !== y.id || x.type !== y.type) return null;
+    if (x.id !== y.id || x.type !== y.type || JSON.stringify(x.vis) !== JSON.stringify(y.vis)) return null;
     if (x.type === 'columns') {
       if (x.props.layout !== y.props.layout || x.props.cols.length !== y.props.cols.length) return null;
       for (let c = 0; c < x.props.cols.length; c++) {
@@ -84,17 +97,22 @@ async function preview() {
   const seq = ++previewSeq;
   try { S.scrollY = frameWin().scrollY || S.scrollY; } catch { /* not loaded */ }
   try {
+    const edit = S.mode === 'edit', site = S.sitePreview || undefined;
     const html = S.mode === 'gallery' ? await api(`chapter/${S.chapter}/gallery`)
-      : await api('preview', 'POST', { chapter: S.chapter, page: S.slug, edit: S.mode === 'edit', ...S.page, site: S.sitePreview || undefined });
+      : S.kind === 'item' ? await api('preview', 'POST', { chapter: S.chapter, col: S.col, id: S.id, item: S.page, edit, site })
+        : await api('preview', 'POST', { chapter: S.chapter, page: S.slug, edit, ...S.page, site });
     if (seq === previewSeq) $('#preview').srcdoc = html;
   } catch (e) { toast('Preview problem: ' + e.message); }
   frameBar();
 }
 const later = () => { clearTimeout(previewTimer); previewTimer = setTimeout(preview, 450); };
 function frameBar() {
-  const p = S.overview?.pages.find((x) => x.slug === S.slug);
-  $('#frameLabel').textContent = S.mode === 'gallery' ? 'Block gallery: every block with sample content' : S.mode === 'view' ? `Preview of “${S.page?.title || ''}” as visitors will see it after publishing` : `Editing “${S.page?.title || ''}”${p && !p.live ? ' · not published yet' : ''}`;
+  const t = docTitle(), w = S.kind === 'item' ? ` ${docWord()}` : '';
+  $('#frameLabel').textContent = S.mode === 'gallery' ? 'Block gallery: every block with sample content' : S.mode === 'view' ? `Preview of “${t}” as visitors will see it after publishing` : `Editing${w ? ' the' + w : ''} “${t}”${!S.live ? ' · not published yet' : ''}`;
   $('#frameExit').hidden = S.mode === 'edit';
+  const back = $('#frameBack');
+  back.hidden = !S.back || S.mode !== 'edit';
+  if (S.back) back.textContent = `← Back to ${S.back.title}`;
 }
 
 // A change to the page: mark unsaved and autosave shortly (E2).
@@ -110,14 +128,15 @@ async function save() {
   if (S.saving) { S.saveAgain = true; return; }
   if (!S.dirty || S.conflict || !S.page) return;
   S.saving = true; S.dirty = false; status();
-  const slug = S.slug;
+  const doc = curDoc(), item = S.kind === 'item', col = S.col;
   try {
-    const r = await api(`chapter/${S.chapter}/page/${slug}`, 'PUT', { page: S.page, baseRev: S.rev });
-    if (slug === S.slug) { S.rev = r.rev; S.draft = r.draft; S.updated = { by: r.updated_by, at: r.updated_at }; }
+    const r = await api(`chapter/${S.chapter}/${docPath()}`, 'PUT', item ? { item: S.page, baseRev: S.rev } : { page: S.page, baseRev: S.rev });
+    if (doc === curDoc()) { S.rev = r.rev; S.draft = r.draft; S.updated = { by: r.updated_by, at: r.updated_at }; }
     S.failures = 0; S.saveError = '';
     refreshOverview(); refreshChecks();
+    if (item) loadLists([col]).then(() => S.panel === 'page' && !S.foc && drawPanel());
   } catch (e) {
-    if (slug === S.slug) S.dirty = true;
+    if (doc === curDoc()) S.dirty = true;
     if (e.status === 409 && e.data?.current) { S.conflict = true; showConflict(e.data.current); }
     else if (e.status === 400) { S.saveError = e.message; toast("Couldn't save: " + e.message); }
     else { S.failures++; S.saveError = e.message; clearTimeout(S.saveTimer); S.saveTimer = setTimeout(save, Math.min(30e3, 1500 * 2 ** S.failures)); }
@@ -148,14 +167,14 @@ addEventListener('beforeunload', (e) => {
 
 // Someone else saved first (W9). Keep mine overwrites; use theirs loads their version and files mine in History.
 async function showConflict(cur) {
-  const choice = await ask(`${cur.by || 'Someone'} saved this page ${ago(cur.at)}, while you were editing`, [
+  const choice = await ask(`${cur.by || 'Someone'} saved this ${docWord()} ${ago(cur.at)}, while you were editing`, [
     el('p', {}, 'Pick which version to keep. The other one is saved in History, so nothing is lost.'),
   ], [{ label: `Use ${cur.by || 'their'}’s version`, value: 'theirs' }, { label: 'Keep my version', value: 'mine', class: 'primary' }]);
   if (choice === 'mine') { S.rev = cur.rev; S.conflict = false; S.dirty = true; await save(); toast('Saved your version. Theirs is in History.'); }
   else if (choice === 'theirs') {
-    try { await api(`chapter/${S.chapter}/versions/${S.slug}/stash`, 'POST', { doc: S.page, name: `${S.me.name || 'My'} edits before loading ${cur.by || 'theirs'}’s` }); } catch { /* best effort */ }
+    try { await api(`chapter/${S.chapter}/versions/${curDoc()}/stash`, 'POST', { doc: S.page, name: `${S.me.name || 'My'} edits before loading ${cur.by || 'theirs'}’s` }); } catch { /* best effort */ }
     S.conflict = false; S.dirty = false;
-    await loadPage(S.slug, { keepPlace: true });
+    await reloadDoc();
     toast(`Loaded ${cur.by || 'their'}’s version. Yours is in History.`);
   } else { S.conflict = true; status(); }
 }
@@ -170,7 +189,7 @@ let checksTimer = 0;
 function refreshChecks() {
   clearTimeout(checksTimer);
   checksTimer = setTimeout(async () => {
-    try { const c = await api(`chapter/${S.chapter}/checks`, 'POST', { page: S.slug }); S.checks = { page: c.page || [], site: c.site || [] }; } catch { return; }
+    try { const c = await api(`chapter/${S.chapter}/checks`, 'POST', { doc: curDoc() }); S.checks = { page: c.page || [], site: c.site || [] }; } catch { return; }
     const errs = [...S.checks.page, ...S.checks.site].filter((x) => x.level === 'error').length, warns = [...S.checks.page, ...S.checks.site].length - errs;
     const b = $('#checksBtn');
     b.textContent = errs ? `${plural(errs, 'problem')}` : warns ? `${plural(warns, 'tip')}` : 'Checks ✓';
@@ -178,30 +197,60 @@ function refreshChecks() {
     if (S.panel === 'checks') drawPanel();
   }, 300);
 }
-async function loadPage(slug, { keepPlace = false } = {}) {
-  if (!(await flush()) && !(await confirmBox("Your last changes couldn't be saved. Leave this page anyway?", 'Leave', true))) return;
+// Opening a page or an item. from: the doc to offer "Back to" (when an item is opened from a page's section).
+async function leaveDoc() { return (await flush()) || confirmBox("Your last changes couldn't be saved. Leave anyway?", 'Leave', true); }
+async function loadPage(slug, opts = {}) {
+  if (!(await leaveDoc())) return;
   const g = await api(`chapter/${S.chapter}/page/${slug}`);
-  const same = slug === S.slug;
-  S.slug = slug; S.page = g.page; S.rev = g.rev; S.draft = g.draft; S.live = g.live; S.updated = { by: g.updated_by, at: g.updated_at };
+  setDoc({ kind: 'page', slug, col: null, id: null }, g.page, g, opts);
+}
+async function loadItem(col, id, opts = {}) {
+  if (!(await leaveDoc())) return;
+  const g = await api(`chapter/${S.chapter}/item/${col}/${id}`);
+  setDoc({ kind: 'item', slug: null, col, id }, g.item, g, opts);
+}
+const reloadDoc = () => (S.kind === 'item' ? loadItem(S.col, S.id, { keepPlace: true }) : loadPage(S.slug, { keepPlace: true }));
+const docRef = () => ({ kind: S.kind, slug: S.slug, col: S.col, id: S.id, title: docTitle() });
+function openRef(ref) {
+  const [col, id] = String(ref).split('/');
+  if (!S.collections[col] || !id) return;
+  loadItem(col, id, { from: docRef() }).catch((e) => toast(e.message));
+}
+function goBack() { const b = S.back; if (!b) return; (b.kind === 'item' ? loadItem(b.col, b.id, { from: null }) : loadPage(b.slug, { from: null })).catch((e) => toast(e.message)); }
+function setDoc(ref, data, g, { keepPlace = false, from } = {}) {
+  const same = ref.kind === S.kind && ref.slug === S.slug && ref.col === S.col && ref.id === S.id;
+  Object.assign(S, ref);
+  S.page = data; S.rev = g.rev; S.draft = g.draft; S.live = g.live; S.path = g.path || ''; S.updated = { by: g.updated_by, at: g.updated_at };
   S.page.blocks.forEach((b) => (b.id ||= uid()));
   if (!(same && keepPlace)) { S.sel = -1; S.selAtom = null; S.foc = null; S.scrollY = 0; S.openItems = new Set(); }
+  if (from !== undefined) S.back = from && !(from.kind === ref.kind && from.slug === ref.slug && from.col === ref.col && from.id === ref.id) ? from : null;
+  else if (!same) S.back = null;
   S.undo = []; S.redo = []; S.last = {}; S.dirty = false; S.conflict = false; S.saveError = '';
   if (S.mode === 'gallery') S.mode = 'edit';
-  local.set('chapter-cms-last', `${S.chapter}/${slug}`);
+  if (S.panel === 'settings') { S.panel = 'page'; S.sitePreview = null; }
+  local.set('chapter-cms-last', `${S.chapter}/${ref.kind === 'item' ? ref.col + '/' + ref.id : ref.slug}`);
   undoButtons(); pagePicker(); status(); drawPanel(); preview(); refreshChecks(); heartbeat();
 }
-async function loadChapter(ch, slug) {
-  S.chapter = ch;
+// Titles of every collection's items, for tag and link pickers and the content screen.
+async function loadLists(cols = Object.keys(S.collections)) {
+  await Promise.all(cols.map(async (c) => { try { S.lists[c] = await api(`chapter/${S.chapter}/items/${c}`); } catch { S.lists[c] = S.lists[c] || []; } }));
+}
+async function loadChapter(ch, last) {
+  S.chapter = ch; S.lists = {}; S.back = null;
   await refreshOverview();
-  const pages = S.overview.pages, home = pages.find((p) => p.home);
-  await loadPage(pages.some((p) => p.slug === slug) ? slug : (home || pages[0]).slug);
+  await loadLists();
+  const pages = S.overview.pages, home = pages.find((p) => p.home), [a, b] = String(last || '').split('/');
+  if (b && S.collections[a] && (S.lists[a] || []).some((x) => x.id === b)) return loadItem(a, b);
+  await loadPage(pages.some((p) => p.slug === a) ? a : (home || pages[0]).slug);
 }
 function pagePicker() {
-  const p = S.overview?.pages.find((x) => x.slug === S.slug);
-  $('#pageName').textContent = p ? p.title : S.page?.title || '';
-  $('#pageState').textContent = !p ? '' : !p.live ? 'Not published' : p.draft ? 'Has changes' : 'Live';
-  $('#pageState').className = 'tag ' + (!p ? '' : !p.live ? 'warn' : p.draft ? 'warn' : 'ok');
-  $('#cms-pages').replaceChildren(...(S.overview?.pages || []).map((x) => el('option', { value: x.home ? '/' : '/' + x.slug }, x.title)));
+  const item = S.kind === 'item', p = item ? (S.lists[S.col] || []).find((x) => x.id === S.id) : S.overview?.pages.find((x) => x.slug === S.slug);
+  const live = p ? p.live : S.live, draft = p ? p.draft : S.draft;
+  $('#pageName').textContent = (item ? colDef().one[0].toUpperCase() + colDef().one.slice(1) + ': ' : '') + (p ? p.title : docTitle());
+  $('#pageState').textContent = !live ? 'Not published' : draft ? 'Has changes' : 'Live';
+  $('#pageState').className = 'tag ' + (!live || draft ? 'warn' : 'ok');
+  const links = [...(S.overview?.pages || []).map((x) => [x.home ? '/' : '/' + x.slug, x.title]), ...Object.entries(S.lists || {}).flatMap(([c, l]) => (S.collections[c].path ? l.map((x) => [x.path, x.title]) : []))];
+  $('#cms-pages').replaceChildren(...links.map(([v, t]) => el('option', { value: v }, t)));
 }
 
 // ---------- presence (W9): who else is editing, and pick up their saves when I have nothing unsaved
@@ -220,10 +269,11 @@ async function heartbeat() {
   // one entry per person; my own name means I have this page open in another tab or device
   const names = [...new Set(here.map((o) => o.name || 'Someone'))].filter((n) => n !== S.me.name), mine = here.some((o) => o.name === S.me.name);
   pill.textContent = names.length ? `${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} here too` : mine ? 'Also open in another tab' : elsewhere.length ? `+${new Set(elsewhere.map((o) => o.name)).size} online` : '';
-  pill.title = S.others.map((o) => `${o.name}: ${o.doc === '@site' ? 'site settings' : S.overview?.pages.find((p) => p.slug === o.doc)?.title || o.doc}`).join('\n');
-  if (doc === S.slug && r.rev != null && r.rev > S.rev && !S.dirty && !S.saving && !S.conflict && S.mode === 'edit') {
-    const by = S.overview?.pages.find((p) => p.slug === S.slug)?.updated_by;
-    await loadPage(S.slug, { keepPlace: true });
+  const nameOf = (d) => { if (d === '@site') return 'site settings'; const m = /^@([a-z]+)-(.+)$/.exec(d); return m ? (S.lists[m[1]] || []).find((x) => x.id === m[2])?.title || d : S.overview?.pages.find((p) => p.slug === d)?.title || d; };
+  pill.title = S.others.map((o) => `${o.name}: ${nameOf(o.doc)}`).join('\n');
+  if (doc === curDoc() && r.rev != null && r.rev > S.rev && !S.dirty && !S.saving && !S.conflict && S.mode === 'edit') {
+    const by = S.updated?.by;
+    await reloadDoc();
     toast(`Updated with ${here[0]?.name || by || 'another editor'}’s latest changes`);
   }
 }
@@ -279,7 +329,7 @@ function setLayout(b, k) {
 function addBlock(type, at) {
   record('struct');
   const i = at ?? (S.sel >= 0 ? S.sel + 1 : S.page.blocks.length);
-  S.page.blocks.splice(i, 0, { id: uid(), type, props: clone(S.schema[type].defaults) });
+  S.page.blocks.splice(i, 0, { id: uid(), type, ...versioned(type), props: clone(S.schema[type].defaults) });
   S.sel = i; S.selAtom = null; S.foc = null; S.insertAt = null;
   structural();
   setTimeout(() => say({ t: 'goto', b: i }), 500);
@@ -295,8 +345,38 @@ function addColumns(k, at) {
 function addAtom(b, c, type) {
   const blk = S.page.blocks[b]; if (!blk || !S.schema[type]) return;
   record('struct');
-  const col = blk.props.cols[c]; col.push({ id: uid(), type, props: clone(S.schema[type].defaults) });
+  const col = blk.props.cols[c]; col.push({ id: uid(), type, ...versioned(type), props: clone(S.schema[type].defaults) });
   S.sel = b; S.selAtom = `${c}.${col.length - 1}`; S.openItems.add(`${b}.atom.${S.selAtom}`); structural();
+}
+// Saved sections (B3): put one on the page, turn one back into a separate copy, or save a section for reuse.
+function addSaved(ref, at) {
+  record('struct');
+  const i = at ?? (S.sel >= 0 ? S.sel + 1 : S.page.blocks.length);
+  S.page.blocks.splice(i, 0, { id: uid(), type: 'saved', props: { ref } });
+  S.sel = i; S.selAtom = null; S.foc = null; structural();
+  setTimeout(() => say({ t: 'goto', b: i }), 500);
+}
+async function detach(b) {
+  const blk = S.page.blocks[b]; if (!blk || blk.type !== 'saved') return;
+  let g; try { g = await api(`chapter/${S.chapter}/item/sections/${blk.props.ref}`); } catch (e) { return toast(e.message); }
+  const copies = clone(g.item.blocks).map((x) => { x.id = uid(); (x.props.cols || []).forEach((col) => col.forEach((a) => (a.id = uid()))); return x; });
+  record('struct');
+  S.page.blocks.splice(b, 1, ...copies); S.sel = copies.length ? b : -1; structural();
+  toast('Now a separate copy. Edits here stay on this page.', { label: 'Undo', run: undo });
+}
+async function saveForReuse(b) {
+  const blk = S.page.blocks[b]; if (!blk || blk.type === 'saved') return;
+  if (S.kind === 'item' && S.col === 'sections') return toast('This is already a saved section.');
+  const head = String(blk.props.heading || blk.props.title || '').replace(/\s+/g, ' ').trim();
+  const name = await askText('Save this section for reuse', 'Name (only editors see it)', (head || S.schema[blk.type].label).slice(0, 60), 'Save');
+  if (!name) return;
+  try {
+    const r = await api(`chapter/${S.chapter}/items/sections`, 'POST', { title: name, blocks: [blk] });
+    record('struct');
+    S.page.blocks.splice(b, 1, { id: uid(), type: 'saved', props: { ref: r.id } });
+    await loadLists(['sections']); structural();
+    toast('Saved. Add it to other pages from “Add a section”, and edit it once to change it everywhere.');
+  } catch (e) { toast(e.message); }
 }
 function selectBlock(b, { scroll = true } = {}) {
   S.sel = b; S.selAtom = null; S.foc = null;
@@ -323,12 +403,15 @@ addEventListener('message', (e) => {
   if (m.t === 'redo') redo();
   if (m.t === 'save') save();
   if (m.t === 'site') openSettings(m.section);
+  if (m.t === 'open') openRef(m.ref);
   if (m.t === 'act') {
     if (m.a === 'layout') { const blk = S.page.blocks[m.b]; if (blk) { S.sel = m.b; setLayout(blk, m.k); } }
     else if (m.a === 'addatom') addAtom(m.b, m.c, m.type);
     else if (m.a === 'addsec') addColumns(m.k, S.page.blocks.length);
     else if (m.a === 'insert') chooseBlock(m.at);
     else if (m.a === 'move') moveNode(m.from, m.to);
+    else if (m.a === 'detach') detach(m.b);
+    else if (m.a === 'reuse') saveForReuse(m.b);
     else act(m.a, m.b, m.atom);
   }
 });

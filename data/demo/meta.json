@@ -1,0 +1,20 @@
+{
+  "schema": 2,
+  "migrated_at": "2026-10-14T15:00:00.000Z",
+  "moved": [
+    "people/alex-rivera",
+    "people/sam-okafor",
+    "endorsements/jordan-lee",
+    "endorsements/measure-h",
+    "events/monthly-meetup-housing",
+    "events/voter-registration-drive",
+    "events/book-club-abundance",
+    "issues/housing-abundance",
+    "issues/free-trade",
+    "issues/state-capacity",
+    "posts/we-registered-40-voters",
+    "posts/chapter-lead-on-local-radio",
+    "posts/chapter-lead-quoted",
+    "posts/book-club-recap-abundance-part"
+  ]
+}

@@ -3,7 +3,8 @@
 <header id="top">
   <strong class="appname">Chapter editor</strong>
   <select id="chapter" aria-label="Chapter"></select>
-  <button id="pagesBtn" class="pagepick" title="All pages"><span id="pageName">Loading…</span> <span id="pageState" class="tag"></span> ▾</button>
+  <button id="contentBtn">Content</button>
+  <button id="pagesBtn" class="pagepick" title="All pages and content"><span id="pageName">Loading…</span> <span id="pageState" class="tag"></span> ▾</button>
   <button id="status" class="pill" aria-live="polite"></button>
   <span id="presence" class="pill" hidden></span>
   <span class="grow"></span>
@@ -17,7 +18,7 @@
 </header>
 <main id="main">
   <div id="stage">
-    <div id="frameBar"><span id="frameLabel"></span><button id="frameExit" class="small" hidden>Back to editing</button></div>
+    <div id="frameBar"><button id="frameBack" class="small" hidden></button><span id="frameLabel" class="grow"></span><button id="frameExit" class="small" hidden>Back to editing</button></div>
     <div id="frameWrap" data-device="desktop"><iframe id="preview" title="Page preview. Click any text to edit it."></iframe></div>
   </div>
   <aside id="panel" aria-label="Editing panel"></aside>

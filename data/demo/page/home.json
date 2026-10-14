@@ -22,66 +22,39 @@
     {
       "id": "h2",
       "type": "events_list",
+      "v": 2,
       "props": {
         "heading": "Show up.",
+        "show": "Upcoming",
+        "issue": "",
+        "limit": "",
         "luma_calendar_url": "https://lu.ma/example",
-        "events": [
-          {
-            "id": "evt-demo1",
-            "title": "Monthly Meetup: Housing and Zoning",
-            "start": "2026-11-05T18:30",
-            "end": "2026-11-05T20:30",
-            "location": "Riverside Taproom",
-            "url": "https://lu.ma/example-1",
-            "cover_image": "",
-            "description": "Casual drinks and a discussion of the **city housing plan**. All welcome, no experience needed."
-          },
-          {
-            "id": "evt-demo2",
-            "title": "Voter Registration Drive",
-            "start": "2026-10-24T10:00",
-            "end": "2026-10-24T13:00",
-            "location": "Farmers Market, Main St.",
-            "url": "https://lu.ma/example-2",
-            "cover_image": "",
-            "description": "Help your neighbors get registered before the deadline."
-          }
-        ]
+        "if_empty": "Show a sign-up box",
+        "empty_text": ""
       }
     },
     {
       "id": "h3",
       "type": "issue_cards",
+      "v": 2,
       "props": {
         "heading": "What we're fighting for",
-        "items": [
-          {
-            "title": "Housing abundance",
-            "summary": "Build more homes, of every kind, near jobs and transit.",
-            "url": ""
-          },
-          {
-            "title": "Free trade",
-            "summary": "Open markets lower prices and raise living standards.",
-            "url": ""
-          },
-          {
-            "title": "State capacity",
-            "summary": "Government should be able to build things and deliver results.",
-            "url": ""
-          }
-        ]
+        "issues": [],
+        "if_empty": "Show a message",
+        "empty_text": ""
       }
     },
     {
-      "id": "h4",
-      "type": "cta",
+      "id": "join",
+      "type": "saved",
       "props": {
-        "heading": "Get involved",
-        "body": "Our chapter runs on volunteers. **Pitch in** wherever you can.",
-        "button_label": "Contact us",
-        "button_url": "mailto:demo@example.org"
+        "ref": "join-the-chapter"
       }
     }
-  ]
+  ],
+  "rev": 1,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
 }

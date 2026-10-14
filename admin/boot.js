@@ -16,10 +16,12 @@ function moreMenu(anchor) {
   const menu = $('#menu');
   if (!menu.hidden) { menu.hidden = true; return; }
   const item = (label, fn) => el('button', { role: 'menuitem', onclick: () => { menu.hidden = true; fn(); } }, label);
+  const o = S.overview || {}, word = docWord();
   fill(menu,
-    item('Pages…', pagesScreen), item('Page settings…', pageSettings), item('Site settings', () => openSettings()), item('Share a preview link…', () => shareDialog()),
+    item('Content: pages, events, news…', () => contentScreen()), item(`${word[0].toUpperCase() + word.slice(1)} settings…`, pageSettings), item('Site settings', () => openSettings()), item('Share a preview link…', () => shareDialog()),
     item('History…', () => historyDialog()), item('Checks', openChecks), item(S.mode === 'view' ? 'Back to editing' : 'Preview as visitors see it', () => setMode(S.mode === 'view' ? 'edit' : 'view')),
-    item('Block gallery', () => setMode('gallery')), item(`Your name: ${S.me.name || 'not set'}`, () => askName(true).then(heartbeat)),
+    item('Media library…', () => mediaLibrary()), item(`Messages${o.inbox ? ` (${o.inbox} new)` : ''}…`, inboxScreen), item(`Scheduled changes${o.scheduled ? ` (${o.scheduled})` : ''}…`, scheduledScreen),
+    item('Block gallery', () => setMode('gallery')), item('National settings…', nationalScreen), item(`Your name: ${S.me.name || 'not set'}`, () => askName(true).then(heartbeat)),
     S.chapters.length > 1 ? el('div', { class: 'menulabel' }, 'Chapter') : '', S.chapters.length > 1 ? S.chapters.map((c) => item((c === S.chapter ? '✓ ' : '') + c, () => switchChapter(c))) : '');
   const r = anchor.getBoundingClientRect();
   menu.style.top = r.bottom + 6 + 'px'; menu.style.right = Math.max(8, innerWidth - r.right) + 'px';
@@ -34,12 +36,14 @@ async function switchChapter(c) {
 
 (async () => {
   const sc = await api('schema');
-  S.schema = sc.blocks; S.layouts = sc.layouts; S.atoms = sc.atoms;
+  S.schema = sc.blocks; S.layouts = sc.layouts; S.atoms = sc.atoms; S.collections = sc.collections; S.templates = sc.templates; S.features = sc.features;
   S.chapters = await api('chapters');
   $('#chapter').replaceChildren(...S.chapters.map((c) => el('option', { value: c }, c)));
   $('#chapter').onchange = (e) => switchChapter(e.target.value);
   // header
   $('#pagesBtn').onclick = pagesScreen;
+  $('#contentBtn').onclick = () => contentScreen();
+  $('#frameBack').onclick = goBack;
   $('#status').onclick = () => { if (S.overview?.pending) publishDialog(); };
   $('#publishBtn').onclick = publishDialog; $('#pbPublish').onclick = publishDialog;
   $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo; $('#pbUndo').onclick = undo; $('#pbRedo').onclick = redo;

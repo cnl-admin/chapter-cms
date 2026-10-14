@@ -1,0 +1,20 @@
+{
+  "title": "Join the chapter",
+  "blocks": [
+    {
+      "id": "h4",
+      "type": "cta",
+      "props": {
+        "heading": "Get involved",
+        "body": "Our chapter runs on volunteers. **Pitch in** wherever you can.",
+        "button_label": "Contact us",
+        "button_url": "mailto:demo@example.org"
+      }
+    }
+  ],
+  "rev": 1,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
+}

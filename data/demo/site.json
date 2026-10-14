@@ -5,9 +5,13 @@
   "contact_email": "demo@example.org",
   "timezone": "America/Chicago",
   "theme": {
-    "primary": "#2C3659",
-    "accent": "#C23B4F",
-    "logo": ""
+    "style": "yard",
+    "palette": "rose",
+    "fonts": "yard",
+    "primary": "",
+    "accent": "",
+    "logo": "",
+    "logo_request": ""
   },
   "nav": [
     {
@@ -32,7 +36,7 @@
     },
     {
       "label": "News & media",
-      "path": "/blog",
+      "path": "/news",
       "style": "link"
     },
     {

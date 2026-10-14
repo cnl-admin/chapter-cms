@@ -22,10 +22,11 @@
             {
               "id": "x2",
               "type": "button",
+              "v": 2,
               "props": {
                 "label": "Volunteer with us",
                 "url": "/events",
-                "style": "Chapter color"
+                "style": "Highlight"
               }
             }
           ],
@@ -55,22 +56,12 @@
     {
       "id": "a2",
       "type": "people_grid",
+      "v": 2,
       "props": {
         "heading": "Chapter leads",
-        "people": [
-          {
-            "name": "Alex Rivera",
-            "role": "Chapter lead",
-            "photo": "",
-            "bio": "Organizing since 2024."
-          },
-          {
-            "name": "Sam Okafor",
-            "role": "Events",
-            "photo": "",
-            "bio": "Keeps the taproom reservations straight."
-          }
-        ]
+        "show": "Current team",
+        "if_empty": "Hide this section",
+        "empty_text": ""
       }
     }
   ]

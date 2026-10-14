@@ -1,0 +1,21 @@
+{
+  "title": "News & media",
+  "seo_title": "",
+  "seo_description": "",
+  "seo_image": "",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "posts_list",
+      "v": 2,
+      "props": {
+        "heading": "News & media",
+        "show": "All",
+        "issue": "",
+        "limit": "",
+        "if_empty": "Show national news",
+        "empty_text": ""
+      }
+    }
+  ]
+}

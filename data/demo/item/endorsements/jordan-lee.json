@@ -1,0 +1,19 @@
+{
+  "name": "Jordan Lee",
+  "office": "City Council, District 4",
+  "election": "Nov 2026",
+  "election_date": "2026-11-03",
+  "result": "Not decided yet",
+  "photo": "",
+  "statement": "Jordan has led on **zoning reform** and transit funding.",
+  "url": "https://example.org",
+  "issues": [
+    "housing-abundance"
+  ],
+  "blocks": [],
+  "rev": 2,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
+}

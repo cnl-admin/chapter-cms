@@ -1,0 +1,19 @@
+{
+  "title": "Chapter lead on local radio",
+  "type": "Podcast",
+  "date": "2026-10-02T12:00",
+  "author": "",
+  "image": "",
+  "excerpt": "Listen to Alex talk housing.",
+  "outlet": "KDMO Radio",
+  "url": "https://example.org/podcast",
+  "issues": [
+    "housing-abundance"
+  ],
+  "blocks": [],
+  "rev": 2,
+  "updated_at": "2026-10-14T15:00:00.000Z",
+  "updated_by": "Demo",
+  "published_at": "2026-10-14T15:00:00.000Z",
+  "published_by": "Demo"
+}
