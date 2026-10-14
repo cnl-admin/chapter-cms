@@ -16,7 +16,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';    // required in produ
 const DEFAULT_CHAPTER = process.env.DEFAULT_CHAPTER || 'demo';
 const cms = createCms({ store: new FileStore(process.env.DATA_DIR || path.join(__dirname, 'data')) });
 // The editor preview is a srcdoc iframe, which resolves these against the admin page's address.
-const api = createApi({ cms, editAssets: '<link rel="stylesheet" href="/admin/frame.css"><script src="/admin/frame.js"></script>' });
+const api = createApi({ cms, editAssets: '<link rel="stylesheet" href="/admin/frame.css"><script src="/admin/text.js"></script><script src="/admin/frame.js"></script>' });
 
 const MIME = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml' };
 const send = (res, code, body, type = MIME['.html'], extra = {}) => { res.writeHead(code, { 'content-type': type, 'x-content-type-options': 'nosniff', ...extra }); res.end(body); };
@@ -63,7 +63,7 @@ async function admin(req, res, url) {
   if (p === '/admin' || p === '/admin/') return send(res, 200, fs.readFileSync(path.join(__dirname, 'admin', 'index.html')), MIME['.html'], safe);
   const asset = p.match(/^\/admin\/([a-z]+\.(js|css))$/);
   if (asset) {
-    const f = path.join(__dirname, 'admin', asset[1]);
+    const f = asset[1] === 'text.js' ? path.join(__dirname, 'lib', 'text.js') : path.join(__dirname, 'admin', asset[1]);
     return fs.existsSync(f) ? send(res, 200, fs.readFileSync(f), MIME['.' + asset[2]], { 'cache-control': 'no-cache' }) : send(res, 404, 'Not found');
   }
   if (!p.startsWith('/admin/api/')) return send(res, 404, 'Not found');
