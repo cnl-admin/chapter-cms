@@ -32,11 +32,10 @@
           [
             {
               "id": "x3",
-              "type": "image",
+              "type": "card",
               "props": {
-                "src": "",
-                "alt": "",
-                "caption": "Chapter meetup, spring"
+                "title": "Monthly meetups",
+                "text": "First Thursday of every month. **New faces always welcome.**"
               }
             },
             {

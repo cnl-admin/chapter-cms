@@ -1,30 +1,38 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chapter editor</title>
-<style>
-:root{--ink:#1c2230;--mut:#5d6578;--line:#d5dae6;--bg:#f2f4f9;--card:#fff;--pri:#2C3659;--acc:#d9a521;--onpri:#fff;--field:#fff;--sel:#fff3cf}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8ebf4;--mut:#9aa3ba;--line:#323a52;--bg:#12161f;--card:#1b2130;--pri:#0d1220;--field:#141927;--sel:#3a3320;color-scheme:dark}}
-:root[data-theme="dark"]{--ink:#e8ebf4;--mut:#9aa3ba;--line:#323a52;--bg:#12161f;--card:#1b2130;--pri:#0d1220;--field:#141927;--sel:#3a3320;color-scheme:dark}
-*{box-sizing:border-box}body{margin:0;font:15px/1.4 system-ui,sans-serif;color:var(--ink);background:var(--bg)}
-header{background:var(--pri);color:var(--onpri);padding:.5rem max(16px,env(safe-area-inset-right,0px)) .5rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-header h1{font-size:1rem;margin:0 auto 0 0}select,input,textarea,button{font:inherit}
-select,input,textarea{width:100%;padding:.45rem .55rem;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink)}
-header select{width:auto}button{color:var(--ink);padding:.42rem .75rem;border:1px solid var(--line);border-radius:6px;background:var(--card);cursor:pointer}
-button.primary{background:var(--acc);border-color:var(--acc);font-weight:600;color:#111}button.danger{color:#b00020}button.small{padding:.2rem .5rem}
-.tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.5rem max(16px,env(safe-area-inset-left,0px));background:var(--card);border-bottom:1px solid var(--line)}
-.tabs button{white-space:nowrap}.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
-main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));align-items:start}
-#stage{min-width:0}#preview{width:100%;height:calc(100vh - 150px);border:1px solid var(--line);border-radius:10px;background:#fff;display:block;margin:0 auto;transition:max-width .2s}#preview.phone{max-width:390px}
-#panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.8rem;position:sticky;top:60px;max-height:calc(100vh - 150px);overflow:auto;min-width:0}
-@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}header{position:static}#stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--bg);padding-bottom:8px}#preview{height:50vh}#panel{position:static;max-height:none;min-height:45vh}}
-h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:1rem 0 .4rem}h2:first-child{margin-top:0}
-label{display:block;font-size:.8rem;font-weight:600;margin:.55rem 0 .15rem;color:var(--mut)}textarea{min-height:5rem;resize:vertical}
-.row{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap}.row strong{flex:1;min-width:0}.help{color:var(--mut);font-size:.82rem;margin:.2rem 0}
-.opt{display:block;width:100%;text-align:left;margin:.3rem 0;padding:.5rem .6rem;white-space:pre-line;font-size:.9rem}.opt:hover{background:var(--sel);border-color:var(--acc)}
-.item{border:1px solid var(--line);border-radius:8px;padding:.45rem .55rem;margin:.4rem 0}.item.cur{border-color:var(--acc);background:var(--sel)}
-.chips{display:flex;flex-wrap:wrap;gap:.3rem;margin:.3rem 0}#status{font-size:.82rem}.pill{border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:.25rem .65rem}.pill.dirty{background:#9F3C39;border-color:#9F3C39;color:#fff}.pill.ok{background:rgba(255,255,255,.14)}.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}.seg button{border:0;border-radius:0;background:var(--card)}.seg button.on{background:var(--acc);color:#111;font-weight:600}.sw{display:flex;gap:.4rem;margin:.3rem 0}.sw button{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid transparent}.sw button.on{border-color:var(--ink)}.lay{display:inline-flex;gap:2px;width:26px;height:12px;vertical-align:middle}.lay b{background:currentColor;border-radius:2px;opacity:.8}.layrow button.on{background:var(--acc);border-color:var(--acc);color:#111}
-dialog{border:1px solid var(--line);border-radius:10px;max-width:520px;width:92%;background:var(--card);color:var(--ink)}
-</style></head><body>
-<header><h1>Chapter editor</h1><select id="chapter" aria-label="Chapter"></select><span id="status" class="pill"></span><div class="seg" id="widthSeg" role="group" aria-label="Preview width"><button class="on" data-w="desktop">Desktop</button><button data-w="phone">Phone</button></div><button id="viewBtn">Clean view</button><button id="pageBtn">Page settings</button><button id="siteBtn">Site settings</button><button id="histBtn">History</button><button id="save">Save draft</button><button id="publish" class="primary">Publish</button></header>
-<div class="tabs" id="tabs"></div>
-<main><div id="stage"><iframe id="preview" title="Page preview, click any text to edit"></iframe></div><aside id="panel" aria-live="polite"></aside></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Chapter editor</title>
+<link rel="stylesheet" href="/admin/admin.css"></head><body>
+<header id="top">
+  <strong class="appname">Chapter editor</strong>
+  <select id="chapter" aria-label="Chapter"></select>
+  <button id="pagesBtn" class="pagepick" title="All pages"><span id="pageName">Loading…</span> <span id="pageState" class="tag"></span> ▾</button>
+  <button id="status" class="pill" aria-live="polite"></button>
+  <span id="presence" class="pill" hidden></span>
+  <span class="grow"></span>
+  <div class="seg" id="deviceSeg" role="group" aria-label="Preview size"><button data-w="desktop">Desktop</button><button data-w="tablet">Tablet</button><button data-w="phone">Phone</button></div>
+  <button id="undoBtn" class="icon" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button><button id="redoBtn" class="icon" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
+  <button id="checksBtn">Checks</button>
+  <button id="settingsBtn">Settings</button>
+  <button id="viewBtn">Preview</button>
+  <button id="moreBtn" aria-haspopup="menu">More ▾</button>
+  <button id="publishBtn" class="primary">Publish…</button>
+</header>
+<main id="main">
+  <div id="stage">
+    <div id="frameBar"><span id="frameLabel"></span><button id="frameExit" class="small" hidden>Back to editing</button></div>
+    <div id="frameWrap" data-device="desktop"><iframe id="preview" title="Page preview. Click any text to edit it."></iframe></div>
+  </div>
+  <aside id="panel" aria-label="Editing panel"></aside>
+</main>
+<nav id="phonebar" aria-label="Editing actions">
+  <button id="pbUndo" aria-label="Undo" disabled>↶<small>Undo</small></button>
+  <button id="pbRedo" aria-label="Redo" disabled>↷<small>Redo</small></button>
+  <button id="pbPrev" aria-label="Previous section">◀<small>Prev</small></button>
+  <button id="pbSection" aria-label="Section options"><span id="pbSection-label">☰</span><small id="pbSectionText"></small></button>
+  <button id="pbNext" aria-label="Next section">▶<small>Next</small></button>
+  <button id="pbPublish" class="primary">Publish</button>
+</nav>
+<datalist id="cms-pages"></datalist>
+<div id="menu" class="menu" role="menu" hidden></div>
 <dialog id="dlg"></dialog>
-<script src="/admin/admin.js"></script></body></html>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="/admin/text.js"></script><script src="/admin/util.js"></script><script src="/admin/editor.js"></script><script src="/admin/panel.js"></script><script src="/admin/screens.js"></script><script src="/admin/boot.js"></script>
+</body></html>

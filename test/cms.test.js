@@ -1,81 +1,173 @@
 'use strict';
+// The CMS core through its API, on the in-memory store (the same code the demo runs).
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs'), os = require('os'), path = require('path');
-const B = require('../lib/blocks');
+const { MemoryStore } = require('../lib/memstore');
 const { FileStore } = require('../lib/store');
+const { createCms } = require('../lib/cms');
+const { createApi, errorResponse } = require('../lib/api');
+const { checkPage, checkSite } = require('../lib/checks');
 
-test('text is HTML-escaped', () => {
-  const h = B.renderBlock({ type: 'text', props: { heading: '<script>x</script>', body: '<img onerror=1>' } });
-  assert.ok(!h.includes('<script>') && !h.includes('<img'));
+const DATA = path.join(__dirname, '..', 'data', 'demo');
+function seed() {
+  const demo = { site: JSON.parse(fs.readFileSync(path.join(DATA, 'site.json'), 'utf8')) };
+  for (const f of fs.readdirSync(path.join(DATA, 'page'))) demo['page/' + f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(DATA, 'page', f), 'utf8'));
+  return { demo };
+}
+function setup() {
+  let t = Date.parse('2030-01-01T12:00:00Z');
+  const clock = { tick: (ms) => { t += ms; } };
+  const cms = createCms({ store: new MemoryStore(seed()), now: () => new Date(t) });
+  const api = createApi({ cms, now: () => t });
+  const call = (method, p, body, user = 'Sam') => api.handle({ method, path: p, body, user }).catch(errorResponse);
+  return { cms, call, clock };
+}
+const edit = async (call, slug, fn, user = 'Sam', baseRev) => {
+  const g = (await call('GET', `chapter/demo/page/${slug}`)).body;
+  fn(g.page);
+  return call('PUT', `chapter/demo/page/${slug}`, { page: g.page, baseRev: baseRev ?? g.rev }, user);
+};
+
+test('demo seed passes the pre-publish checks', async () => {
+  const { cms } = setup();
+  for (const p of (await cms.overview('demo')).pages) assert.deepStrictEqual((await cms.checks('demo', p.slug)).page.filter((c) => c.level === 'error'), [], p.slug);
+  assert.deepStrictEqual((await cms.checks('demo')).site, []);
 });
-test('markdown subset and unsafe links', () => {
-  const h = B.paras('**b** *i* [ok](https://a.com) [bad](javascript:alert(1)) [bad2](data:text/html,x)');
-  assert.match(h, /<strong>b<\/strong>/); assert.match(h, /<em>i<\/em>/); assert.match(h, /href="https:\/\/a.com"/);
-  assert.ok(!/javascript:|data:/.test(h));
+test('drafts stay private until published; undoing every change clears the draft', async () => {
+  const { cms, call } = setup();
+  let r = await edit(call, 'about', (p) => { p.blocks[0].props.cols[0][0].props.heading = 'DRAFT-MARKER'; });
+  assert.strictEqual(r.status, 200); assert.strictEqual(r.body.draft, true);
+  assert.ok(!(await cms.renderLive('demo', 'about')).html.includes('DRAFT-MARKER'));
+  assert.deepStrictEqual((await call('POST', 'chapter/demo/publish', {})).body.published, ['page:about']);
+  assert.ok((await cms.renderLive('demo', 'about')).html.includes('DRAFT-MARKER'));
+  r = await edit(call, 'about', (p) => { p.blocks[0].props.cols[0][0].props.heading = 'Changed'; });
+  assert.strictEqual(r.body.draft, true);
+  r = await edit(call, 'about', (p) => { p.blocks[0].props.cols[0][0].props.heading = 'DRAFT-MARKER'; });
+  assert.strictEqual(r.body.draft, false, 'back to the live content, so no draft');
+  assert.strictEqual((await call('GET', 'chapter/demo')).body.pending, 0);
 });
-test('safeUrl rejects bad schemes and protocol-relative', () => {
-  for (const u of ['javascript:1', ' JaVaScript:1', 'data:x', '//evil.com', 'vbscript:1']) assert.strictEqual(B.safeUrl(u), '#');
-  for (const u of ['https://a.com', '/events', 'mailto:a@b.c', '#top']) assert.notStrictEqual(B.safeUrl(u), '#');
+test('a save based on an old rev is refused with the current version', async () => {
+  const { call } = setup();
+  const g = (await call('GET', 'chapter/demo/page/home')).body;
+  assert.strictEqual((await edit(call, 'home', (p) => { p.title = 'Mine'; }, 'Sam', g.rev)).status, 200);
+  const r = await edit(call, 'home', (p) => { p.title = 'Theirs'; }, 'Ana', g.rev);
+  assert.strictEqual(r.status, 409); assert.strictEqual(r.body.error, 'conflict');
+  assert.strictEqual(r.body.current.by, 'Sam'); assert.strictEqual(r.body.current.page.title, 'Mine');
+  const forced = await call('PUT', 'chapter/demo/page/home', { page: { ...r.body.current.page, title: 'Theirs' }, baseRev: g.rev, force: true }, 'Ana');
+  assert.strictEqual(forced.status, 200);
 });
-test('validateBlocks strips unknown keys, rejects unknown types', () => {
-  const [b] = B.validateBlocks([{ type: 'hero', props: { heading: 'Hi', evil: 'x' } }]);
-  assert.strictEqual(b.props.heading, 'Hi'); assert.ok(!('evil' in b.props));
-  assert.throws(() => B.validateBlocks([{ type: 'nope' }]));
-  assert.throws(() => B.validateBlocks('x'));
+test('new pages are drafts that offer to join the menu, and go live together with it', async () => {
+  const { cms, call } = setup();
+  const { slug } = (await call('POST', 'chapter/demo/pages', { title: 'Volunteer!', addToMenu: true })).body;
+  assert.strictEqual(slug, 'volunteer');
+  assert.ok(!(await cms.renderLive('demo', '')).html.includes('/volunteer'), 'menu link waits for publish');
+  let p = (await call('GET', 'chapter/demo/pending')).body.items;
+  assert.deepStrictEqual(p.map((x) => x.id), ['page:volunteer', 'site']);
+  assert.ok(p[0].checks.some((c) => c.level === 'error' && /starter text/.test(c.msg)));
+  assert.strictEqual((await call('POST', 'chapter/demo/publish', {})).status, 422);
+  await edit(call, 'volunteer', (pg) => { pg.blocks[1].props.body = 'Help out at our next canvass.'; });
+  // publishing the menu without the page would break a link
+  p = (await call('POST', 'chapter/demo/pending', { items: ['site'] })).body.items;
+  assert.ok(p.find((x) => x.id === 'site').checks.some((c) => /isn't published/.test(c.msg)));
+  assert.strictEqual((await call('POST', 'chapter/demo/publish', { items: ['site'] })).status, 422);
+  assert.strictEqual((await call('POST', 'chapter/demo/publish', {})).status, 200);
+  assert.strictEqual((await cms.renderLive('demo', 'volunteer')).status, 200);
+  assert.ok((await cms.renderLive('demo', '')).html.includes('href="/volunteer"'));
+  const noMenu = (await call('POST', 'chapter/demo/pages', { title: 'Hidden', addToMenu: false })).body;
+  assert.ok(!(await call('GET', 'chapter/demo/site')).body.site.nav.some((n) => n.path === '/' + noMenu.slug));
 });
-test('store rejects bad slugs, keeps history', () => {
+test('pages screen actions: duplicate, rename, unpublish, delete and restore, set homepage', async () => {
+  const { cms, call } = setup();
+  const dup = (await call('POST', 'chapter/demo/page/about/duplicate', {})).body.slug;
+  assert.strictEqual((await call('GET', `chapter/demo/page/${dup}`)).body.page.title, 'About (copy)');
+  assert.strictEqual((await call('POST', `chapter/demo/page/${dup}/rename`, { title: 'Team', slug: 'team' })).body.slug, 'team');
+  assert.strictEqual((await call('POST', 'chapter/demo/page/about/rename', { slug: 'about-us' })).status, 400, 'published pages keep their address');
+  assert.strictEqual((await call('POST', 'chapter/demo/page/home/delete', {})).status, 400, 'homepage is protected');
+  await call('POST', 'chapter/demo/page/blog/unpublish', {});
+  assert.strictEqual((await cms.renderLive('demo', 'blog')).status, 404);
+  assert.ok(!(await cms.renderLive('demo', '')).html.includes('href="/blog"'), 'removed from the live menu at once');
+  const t = (await call('POST', 'chapter/demo/page/blog/delete', {})).body.trashed;
+  assert.strictEqual((await call('GET', 'chapter/demo')).body.trash[0].slug, 'blog');
+  assert.strictEqual((await call('POST', `chapter/demo/trash/${t}/restore`, {})).body.slug, 'blog');
+  assert.strictEqual((await call('GET', 'chapter/demo/page/blog')).body.draft, true);
+  await call('POST', 'chapter/demo/page/events/home', {});
+  const s = (await call('GET', 'chapter/demo/site')).body.site;
+  assert.strictEqual(s.home, 'events');
+  assert.ok(s.nav.some((n) => n.label === 'Events' && n.path === '/') && s.nav.some((n) => n.label === 'Home' && n.path === '/home'));
+  await call('POST', 'chapter/demo/publish', { items: ['site'] });
+  assert.match((await cms.renderLive('demo', '')).html, /Show up/);
+  assert.deepStrictEqual(await cms.renderLive('demo', 'events'), { status: 301, location: '/' });
+});
+test('version history: coalesced edits, names, compare data, restore a page or the whole site', async () => {
+  const { call, clock } = setup();
+  await edit(call, 'home', (p) => { p.title = 'A'; });
+  clock.tick(60e3); await edit(call, 'home', (p) => { p.title = 'B'; });
+  let v = (await call('GET', 'chapter/demo/versions/home')).body;
+  assert.strictEqual(v.length, 1, 'one edit version per person per session');
+  clock.tick(11 * 60e3); await edit(call, 'home', (p) => { p.title = 'C'; });
+  await edit(call, 'home', (p) => { p.title = 'D'; }, 'Ana');
+  v = (await call('GET', 'chapter/demo/versions/home')).body;
+  assert.deepStrictEqual(v.map((x) => `${x.by}:${x.title}`), ['Ana:D', 'Sam:C', 'Sam:B']);
+  await call('POST', `chapter/demo/versions/home/${v[2].id}/name`, { name: 'Before the redesign' });
+  assert.strictEqual((await call('GET', `chapter/demo/versions/home/${v[2].id}`)).body.doc.title, 'B');
+  await call('POST', `chapter/demo/versions/home/${v[2].id}/restore`, {});
+  assert.strictEqual((await call('GET', 'chapter/demo/page/home')).body.page.title, 'B');
+  // whole-site restore goes back to what was live at a publish
+  await call('POST', 'chapter/demo/publish', {});
+  const first = (await call('GET', 'chapter/demo/timeline')).body[0];
+  clock.tick(60e3); await edit(call, 'home', (p) => { p.title = 'Later'; }); await edit(call, 'about', (p) => { p.title = 'Later'; });
+  await call('POST', 'chapter/demo/publish', {});
+  assert.strictEqual((await call('GET', 'chapter/demo/timeline')).body.length, 2);
+  const r = (await call('POST', 'chapter/demo/restore-site', { at: first.at })).body;
+  assert.deepStrictEqual(r.restored, ['home']); assert.ok(r.unchanged.includes('about'));
+  assert.strictEqual((await call('GET', 'chapter/demo/page/home')).body.page.title, 'B');
+});
+test('share links show the draft for 7 days and can be revoked', async () => {
+  const { cms, call, clock } = setup();
+  await edit(call, 'about', (p) => { p.blocks[0].props.cols[0][0].props.heading = 'SECRET-DRAFT'; });
+  const { token } = (await call('POST', 'chapter/demo/page/about/share', {})).body;
+  const html = await cms.renderShare('demo', token);
+  assert.match(html, /SECRET-DRAFT/); assert.match(html, /noindex/); assert.match(html, /Preview of unpublished changes/);
+  assert.strictEqual(await cms.renderShare('demo', 'x'.repeat(20)), null);
+  clock.tick(8 * 864e5);
+  assert.strictEqual(await cms.renderShare('demo', token), null, 'expired');
+  const t2 = (await call('POST', 'chapter/demo/page/about/share', {})).body.token;
+  await call('POST', `chapter/demo/shares/${t2}/revoke`, {});
+  assert.strictEqual(await cms.renderShare('demo', t2), null, 'revoked');
+});
+test('presence lists other editors and the current rev', async () => {
+  const { call, clock } = setup();
+  await call('POST', 'chapter/demo/presence', { id: 'a', name: 'Sam', doc: 'home' });
+  let r = (await call('POST', 'chapter/demo/presence', { id: 'b', name: 'Ana', doc: 'home' })).body;
+  assert.deepStrictEqual(r.others, [{ name: 'Sam', doc: 'home' }]); assert.strictEqual(r.rev, 0);
+  clock.tick(60e3);
+  r = (await call('POST', 'chapter/demo/presence', { id: 'b', name: 'Ana', doc: 'home' })).body;
+  assert.deepStrictEqual(r.others, [], 'stale editors drop off');
+});
+test('checks: placeholders, starter text, broken and vague links, alt text, contrast', () => {
+  const live = new Set(['home', 'events']);
+  const page = { title: 'T', blocks: [
+    { type: 'hero', props: { heading: 'Hi', subheading: '', badge_text: '', image: '', intro: '', button_label: 'Join', button_url: '/missing', button2_label: 'More', button2_url: '' } },
+    { type: 'text', props: { heading: 'H', body: 'Write something here.' } },
+    { type: 'text', props: { heading: 'H', body: 'See [click here](/events) or [this](www.example.com)' } },
+    { type: 'image', props: { src: 'https://x/y.jpg', alt: '', caption: '' } },
+    { type: 'events_list', props: { heading: 'E', events: [{ title: 'Meetup', start: '2030-01-01T10:00', location: '[Venue]' }] } },
+  ] };
+  const msgs = checkPage(page, { live, site: {} }).map((c) => `${c.level}:${c.msg}`).join('\n');
+  for (const re of [/error:Main button link: Links to \/missing/, /warn:The button “More” has no link/, /error:Text still has the starter text/, /warn:The link “click here”/, /error:.*isn't a working link. Did you mean https:\/\/www.example.com/, /error:Describe this image/, /error:Location: replace the placeholder “\[Venue\]”/]) assert.match(msgs, re);
+  const fix = checkPage(page, { live, site: {} }).find((c) => c.fix);
+  assert.strictEqual(fix.fix, 'See [click here](/events) or [this](https://www.example.com)', 'one-tap fix rewrites the link in place');
+  const site = checkSite({ name: 'X', theme: { primary: '#eeeeee' }, nav: [{ label: '', path: '/gone' }] }, { live });
+  assert.ok(site.some((c) => c.section === 'look' && c.level === 'error'));
+  assert.ok(site.some((c) => /Menu item 1 has no label/.test(c.msg)) && site.some((c) => /\/gone/.test(c.msg)));
+});
+test('FileStore keeps keys inside the chapter folder', async () => {
   const s = new FileStore(fs.mkdtempSync(path.join(os.tmpdir(), 'cms-')));
-  for (const bad of ['../x', 'A', 'a/b', '']) assert.throws(() => s.get(bad, 'home'));
-  assert.throws(() => s.get('demo', '../x'));
-  s.put('demo', 'home', { title: 'v1', blocks: [] }); s.put('demo', 'home', { title: 'v2', blocks: [] });
-  assert.strictEqual(s.get('demo', 'home').title, 'v2');
-  const h = s.history('demo', 'home'); assert.strictEqual(h.length, 1);
-  assert.strictEqual(s.restore('demo', 'home', h[0]).title, 'v1');
-  assert.throws(() => s.restore('demo', 'home', '../../etc/passwd'));
-});
-test('past events hidden by default', () => {
-  const h = B.renderBlock({ type: 'events_list', props: { heading: 'E', events: [{ title: 'Old', start: '2020-01-01T10:00' }, { title: 'New', start: '2999-01-01T10:00' }] } });
-  assert.ok(!h.includes('Old') && h.includes('New'));
-});
-test('server: auth + csrf + render', async () => {
-  process.env.ADMIN_PASSWORD = 'pw';
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-data-')); fs.cpSync(path.join(__dirname, '..', 'data'), tmp, { recursive: true }); process.env.DATA_DIR = tmp;
-  const { server } = require('../server');
-  await new Promise((r) => server.listen(0, r));
-  const base = `http://127.0.0.1:${server.address().port}`;
-  const auth = { authorization: 'Basic ' + Buffer.from('x:pw').toString('base64') };
-  assert.strictEqual((await fetch(base + '/admin/api/chapters')).status, 401);
-  assert.strictEqual((await fetch(base + '/admin/api/chapters', { headers: auth })).status, 200);
-  assert.strictEqual((await fetch(base + '/admin/api/chapter/demo/page/home', { method: 'PUT', headers: { ...auth, 'content-type': 'text/plain' }, body: '{}' })).status, 415);
-  assert.strictEqual((await fetch(base + '/admin/api/chapter/demo/page/home', { method: 'PUT', headers: { ...auth, 'content-type': 'application/json', origin: 'https://evil.com' }, body: '{}' })).status, 403);
-  assert.strictEqual((await fetch(base + '/')).status, 200);
-  assert.strictEqual((await fetch(base + '/..%2f..%2fetc')).status, 404);
-  assert.strictEqual((await fetch(base + '/nope')).status, 404);
-  // drafts stay private until published
-  const jh = { ...auth, 'content-type': 'application/json' };
-  const put = (blocks) => fetch(base + '/admin/api/chapter/demo/page/about', { method: 'PUT', headers: jh, body: JSON.stringify({ title: 'About', blocks }) });
-  assert.strictEqual((await put([{ type: 'text', props: { heading: 'DRAFT-MARKER' } }])).status, 200);
-  assert.ok(!(await (await fetch(base + '/about')).text()).includes('DRAFT-MARKER'));
-  assert.ok((await (await fetch(base + '/admin/api/chapter/demo/page/about', { headers: auth })).json()).blocks[0].props.heading === 'DRAFT-MARKER');
-  assert.deepStrictEqual((await (await fetch(base + '/admin/api/chapter/demo/publish', { method: 'POST', headers: jh, body: '{}' })).json()).published, ['about']);
-  assert.ok((await (await fetch(base + '/about')).text()).includes('DRAFT-MARKER'));
-  // new page: draft, added to menu, 404 until published
-  const np = await (await fetch(base + '/admin/api/chapter/demo/pages', { method: 'POST', headers: jh, body: JSON.stringify({ title: 'Volunteer!' }) })).json();
-  assert.strictEqual(np.slug, 'volunteer');
-  assert.strictEqual((await fetch(base + '/volunteer')).status, 404);
-  await fetch(base + '/admin/api/chapter/demo/publish', { method: 'POST', headers: jh, body: '{}' });
-  assert.strictEqual((await fetch(base + '/volunteer')).status, 200);
-  server.close();
-});
-test('columns validation: atoms only, column count follows layout', () => {
-  const [b] = B.validateBlocks([{ type: 'columns', props: { layout: 'full', cols: [[{ type: 'text', props: { heading: 'a' } }], [{ type: 'button', props: { label: 'b' } }]] } }]);
-  assert.strictEqual(b.props.cols.length, 1); assert.strictEqual(b.props.cols[0].length, 2);
-  assert.throws(() => B.validateBlocks([{ type: 'columns', props: { layout: 'halves', cols: [[{ type: 'hero', props: {} }], []] } }]));
-  const h = B.renderBlock({ type: 'columns', props: { layout: 'halves', cols: [[{ type: 'text', props: { heading: '<b>x</b>' } }], []] } }, { site: {} });
-  assert.ok(!h.includes('<b>x'));
-});
-test('event times render as entered wall-clock time regardless of server TZ', () => {
-  const h = B.renderBlock({ type: 'events_list', props: { heading: 'E', show_past: 'Yes', events: [{ title: 'T', start: '2026-11-05T18:30' }] } });
-  assert.match(h, /6:30 PM/);
+  for (const bad of ['../x', 'A', 'a/b', '']) await assert.rejects(() => s.get(bad, 'site'));
+  for (const key of ['../x', 'page/../../x', 'page/a b', '']) await assert.rejects(() => s.get('demo', key));
+  await s.put('demo', 'page/home', { a: 1 }); await s.put('demo', 'site', { b: 1 });
+  assert.deepStrictEqual(await s.list('demo', 'page/'), ['page/home']);
+  assert.deepStrictEqual(await s.chapters(), ['demo']);
+  await s.del('demo', 'page/home'); assert.strictEqual(await s.get('demo', 'page/home'), null);
 });

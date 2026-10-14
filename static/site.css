@@ -99,3 +99,13 @@ footer a{color:inherit}footer p{margin:.3em 0}.foot-name{font-size:1.4rem;margin
 .socials{display:flex;flex-wrap:wrap;gap:8px 22px;margin:.4rem 0}.socials a{color:inherit;font-weight:800}
 .scol>.card .pad p{font-size:1rem}
 @media(max-width:700px){.cols{grid-template-columns:1fr!important;gap:28px}}
+
+/* ---- site chrome added in Stage 1 (barebones until the design pass) ---- */
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.announce{background:var(--navy);color:var(--paper);font-weight:700;font-size:.85rem;padding:10px 0;text-align:center}.announce a{color:var(--paper);margin-left:.5em}
+nav .navbtn{background:var(--navy);color:var(--paper);padding:8px 16px;border-bottom:0}nav .navbtn:hover{color:var(--paper);border-bottom:0}
+.dd{position:relative}.dd>summary{list-style:none;cursor:pointer;color:var(--on-ch);font-weight:700;font-size:.85rem;letter-spacing:.03em;padding:10px 0}.dd>summary::-webkit-details-marker{display:none}.dd>summary:after{content:" \25BE"}
+.ddm{position:absolute;z-index:30;top:100%;left:-14px;min-width:200px;background:var(--paper);border:3px solid var(--navy);display:flex;flex-direction:column;padding:4px 0}.ddm a{color:var(--navy);padding:8px 14px;border-bottom:0}.ddm a:hover,.ddm a[aria-current]{color:var(--ch-text);border-bottom:0}
+.footlinks{display:flex;flex-wrap:wrap;gap:6px 22px}.footlinks a{font-weight:700}
+.disclaimer{display:inline-block;margin-top:1.2em!important;border:2px solid currentColor;padding:4px 10px;font-size:.8rem}
+.atomtext ul,.card ul,.fbody ul{margin:.5em 0;padding-left:1.2em}h3.sub{font-size:1.15rem;margin:1em 0 .3em}

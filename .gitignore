@@ -1,4 +1,13 @@
 node_modules/
-.history/
-drafts/
 *.log
+test-results/
+# runtime data the CMS writes (the demo seed is site.json + page/)
+data/*/draft/
+data/*/ver/
+data/*/verindex/
+data/*/trash/
+data/*/shares.json
+data/*/site-draft.json
+data/*/.history/
+test/visual/actual/
+chapter-editor-demo.html
