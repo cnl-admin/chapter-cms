@@ -321,7 +321,8 @@ function lookSection(s) {
   const custom = look.custom && th.palette === 'custom';
   return [
     el('p', { class: 'hint' }, 'Change how every page looks. Your words and pictures stay as they are.'),
-    el('label', {}, 'Style'), el('div', { class: 'seg' }, Object.entries(look.styles).map(([k, n]) => el('button', { class: th.style === k ? 'on' : '', onclick: pick('style', k) }, n))),
+    el('label', {}, 'Design'), el('div', { class: 'seg' }, Object.entries(look.styles).map(([k, d]) => el('button', { class: th.style === k ? 'on' : '', onclick: pick('style', k) }, d.name))),
+    look.styles[th.style] ? el('p', { class: 'hint' }, look.styles[th.style].hint) : '',
     el('label', {}, 'Colours'), el('div', { class: 'palettes' }, look.palettes.map((p) => el('button', { class: 'pal' + (th.palette === p.id ? ' on' : ''), onclick: pick('palette', p.id), title: p.name },
       el('span', { class: 'sw2' }, el('i', { style: `background:${p.primary}` }), el('i', { style: `background:${p.accent}` })), p.name)),
     look.custom ? el('button', { class: 'pal' + (custom ? ' on' : ''), onclick: () => { th.primary ||= look.palettes[0]?.primary || '#2C3659'; th.accent ||= look.palettes[0]?.accent || '#C23B4F'; pick('palette', 'custom')(); } }, el('span', { class: 'sw2' }, el('i', { style: `background:${th.primary || '#ccc'}` }), el('i', { style: `background:${th.accent || '#eee'}` })), 'Custom') : ''),

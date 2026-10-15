@@ -48,7 +48,7 @@ var __m = {}, __cache = {};
 function __require(n) { if (__cache[n]) return __cache[n].exports; var m = __cache[n] = { exports: {} }; __m[n](m, m.exports, __require); return m.exports; }
 ${safe(MODS.map(mod).join('\n'))}
 (function () {
-  var KEY = 'chapter-cms-demo-v5', SEED = ${safe(JSON.stringify(seed))};
+  var KEY = 'chapter-cms-demo-v6', SEED = ${safe(JSON.stringify(seed))};
   var SITE_CSS = ${safe(JSON.stringify('<style>' + sitecss + '</style>'))};
   var data = null;
   try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* storage blocked */ }

@@ -149,11 +149,11 @@ test('themes restyle every page without touching content (T1, T2)', async () => 
   const { cms, call, store } = setup({ at: AT });
   const before = JSON.stringify(await store.get('demo', 'page/home'));
   const g = (await call('GET', 'chapter/demo/site')).body;
-  g.site.theme = { ...g.site.theme, style: 'plain', palette: 'teal', fonts: 'system' };
+  g.site.theme = { ...g.site.theme, style: 'riso', palette: 'teal', fonts: 'system' };
   await call('PUT', 'chapter/demo/site', { site: g.site, baseRev: g.rev });
   await call('POST', 'chapter/demo/publish', {});
   const h = (await live(cms, '')).html;
-  assert.match(h, /<body class="style-plain">/); assert.match(h, /--ch:#00ABBF/); assert.match(h, /--font-body:system-ui/); assert.ok(!h.includes('fonts.googleapis'));
+  assert.match(h, /<body class="style-riso">/); assert.match(h, /--ch:#00ABBF/); assert.match(h, /--font-body:system-ui/); assert.ok(!h.includes('fonts.googleapis'));
   assert.strictEqual(JSON.stringify(await store.get('demo', 'page/home')), before, 'no page changed');
   // custom colours only when national allows them
   g.site.theme = { ...g.site.theme, palette: 'custom', accent: '#123456', primary: '#2C3659' };

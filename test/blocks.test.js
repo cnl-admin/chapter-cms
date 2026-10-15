@@ -43,7 +43,7 @@ for (const [type, def] of Object.entries(B.blocks)) {
 }
 test('edit mode marks editable text with its path and guidance', () => {
   const h = B.renderBlock({ type: 'hero', props: B.defaultsFor('hero') }, { edit: true, i: 3 });
-  assert.match(h, /data-f="3\.heading" data-fl="Sign headline" data-ph="Sign headline \(required\)" data-max="60" data-maxlines="3" data-ml="1"/);
+  assert.match(h, /data-f="3\.heading" data-fl="Headline" data-ph="Headline \(required\)" data-max="60" data-maxlines="3" data-ml="1"/);
   const t = B.renderBlock({ type: 'text', props: B.defaultsFor('text') }, { edit: true, i: 0 });
   assert.match(t, /class="rich" data-f="0\.body"[^>]*data-rich="1"/);
   assert.strictEqual(B.renderBlock({ type: 'hero', props: B.defaultsFor('hero') }).includes('data-f'), false);
