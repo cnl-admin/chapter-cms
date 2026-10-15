@@ -5,9 +5,9 @@
   "contact_email": "demo@example.org",
   "timezone": "America/Chicago",
   "theme": {
-    "style": "yard",
+    "style": "masterplan",
     "palette": "rose",
-    "fonts": "yard",
+    "fonts": "archivo",
     "primary": "",
     "accent": "",
     "logo": "",

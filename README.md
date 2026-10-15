@@ -1,6 +1,6 @@
 # Chapter CMS
 
-A small block-based CMS for CNL chapter websites. Chapter leads enter their events, news, people, endorsements and issues once, then build pages by stacking pre-made sections that show them (plus text, photos, columns, FAQs, forms and more). Every item gets its own page with a clean link. The public site renders in the "Yard Sign" design (option C from the CNL Chapter Sites design-directions canvas) or a plain style, in colours national approves. No dependencies: just Node 20+.
+A small block-based CMS for CNL chapter websites. Chapter leads enter their events, news, people, endorsements and issues once, then build pages by stacking pre-made sections that show them (plus text, photos, columns, FAQs, forms and more). Every item gets its own page with a clean link. The public site renders in one of two designs from the CNL Chapter Sites design-directions canvas, picked per site under Settings, Look: "Master Plan" (row B) or "Riso Zine" (row E), in colours national approves. No dependencies: just Node 20+.
 
 ## Run it
 
@@ -93,4 +93,4 @@ volunteer_form: {
 
 - Cloudflare deploy, logins and roles (the editor asks for a name for now, and national settings are open to every editor), multisite management, Luma and Action Network syncs, email delivery of contact messages (they wait in Messages).
 - Dates are stored as local wall-clock times in the chapter's timezone.
-- Design is barebones on purpose: Yard Sign and Plain styles. Typekit Pragmatica Extended is not loaded, so Archivo (expanded) from Google Fonts stands in. New styles go in `static/site.css` under a `.style-<name>` class and in `STYLES` in `lib/theme.js`.
+- Two designs, Master Plan and Riso Zine. Blocks output the same markup for both; each design shows or hides its own decorations (the hero map, tape, ovals, the event calendar). Typekit Pragmatica Extended is not loaded, so Archivo from Google Fonts stands in; Riso Zine also loads Permanent Marker for its handwritten notes. A new design goes in `static/site.css` under a `.style-<name>` class and in `DESIGNS` in `lib/theme.js`.
